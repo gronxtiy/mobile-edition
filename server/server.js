@@ -38,7 +38,9 @@ app.use(
     "http://localhost:5177",  // admin dev
     "https://www.gronxtiy.com", // student prod
     "https://admin.gronxtiy.com", // admin prod
-    "https://gronxtiy-beta-git-main-gronxtiy.vercel.app"  // ✅ ADD THIS
+    "https://gronxtiy-beta-git-main-gronxtiy.vercel.app",
+     "https://gronxtiy-beta-git-mobile-edition-gronxtiy.vercel.app"
+
 
 
 ],
@@ -55,7 +57,9 @@ const io = new Server(server, {
     "http://localhost:5177",  // admin dev
     "https://www.gronxtiy.com", // student prod
     "https://admin.gronxtiy.com", // admin prod
-    "https://gronxtiy-beta-git-main-gronxtiy.vercel.app"  // ✅ ADD THIS
+    "https://gronxtiy-beta-git-main-gronxtiy.vercel.app",
+    "https://gronxtiy-beta-git-mobile-edition-gronxtiy.vercel.app"
+
 
 
 ],
