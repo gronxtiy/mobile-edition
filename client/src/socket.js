@@ -8,11 +8,24 @@ const socket = io(import.meta.env.VITE_API_URL, {
 export default socket;*/}
 
 
-import { io } from "socket.io-client";
+/*import { io } from "socket.io-client";
 
 const socket = io(import.meta.env.VITE_API_URL, {
   withCredentials: true,
   transports: ["websocket", "polling"],
+});
+
+export default socket;*/
+
+
+
+
+import { io } from "socket.io-client";
+
+const socket = io(import.meta.env.VITE_API_URL, {
+  withCredentials: true,
+  transports: ["polling", "websocket"],
+  autoConnect: true,
 });
 
 export default socket;
