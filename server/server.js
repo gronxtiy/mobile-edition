@@ -1649,42 +1649,25 @@ app.put("/api/recruiter/change-password", authMiddleware, recruiterOnly, async (
 
 
 
-app.get("/api/auth/me", authMiddleware, async (req, res) => {
-  try {
-    let user;
 
-    if (req.user.role === "student") {
-      user = await UserModel.findById(req.user.id).select("-password");
-    } else if (req.user.role === "recruiter") {
-      user = await Recruiter.findById(req.user.id).select("-password");
-    }
+app.get("/api/recruiter/dashboard", authMiddleware, (req, res) => {
 
-    if (!user) {
-      return res.status(404).json({
-        message: "User not found"
-      });
-    }
+  if (req.user.role !== "recruiter")
+    return res.status(403).json({ message: "Access denied" });
 
-    res.json({
-      authenticated: true,
-      role: req.user.role,
-      user: {
-        _id: user._id,
-        name: user.name,
-        email: user.email
-      }
-    });
+  res.json({ message: "Recruiter dashboard access granted" });
 
-  } catch (err) {
-    console.error("Auth check error:", err);
-
-    res.status(500).json({
-      message: "Server error"
-    });
-  }
 });
 
 
+app.get("/api/student/dashboard", authMiddleware, (req, res) => {
+
+  if (req.user.role !== "student")
+    return res.status(403).json({ message: "Access denied" });
+
+  res.json({ message: "Student dashboard access granted" });
+
+});
 
 
 
@@ -1818,7 +1801,7 @@ app.get("/api/student/profile/me", authMiddleware, studentOnly, async (req, res)
         profileType: user.profileType || "Student",
         mainSkills: user.mainSkills || [],
         noticePeriod: user.noticePeriod || "Immediate",
-        preferredLocations: user.preferredLocations || [],
+preferredLocations: user.preferredLocations || [],
         connections: user.connections?.length || 0,
         followers: user.followers?.length || 0,
 
