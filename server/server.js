@@ -306,18 +306,42 @@ const Recruiter = mongoose.model("Recruiter", RecruiterSchema);
 
 
 // ================= AUTH MIDDLEWARE =================
-const authMiddleware = (req, res, next) => {
-  const token = req.cookies.token;
+// ================= AUTH MIDDLEWARE =================
 
-  if (!token)
-    return res.status(401).json({ message: "Not authenticated" });
+const authMiddleware = (req, res, next) => {
+  console.log("========== AUTH CHECK ==========");
+  console.log("Origin:", req.headers.origin);
+  console.log("Cookie header:", req.headers.cookie);
+  console.log("Parsed cookies:", req.cookies);
+
+  const token = req.cookies?.token;
+
+  if (!token) {
+    console.log("❌ NO TOKEN RECEIVED");
+
+    return res.status(401).json({
+      message: "Not authenticated"
+    });
+  }
 
   try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET || "secret123");
-    req.user = decoded; // contains id & role
+    const decoded = jwt.verify(
+      token,
+      process.env.JWT_SECRET || "secret123"
+    );
+
+    console.log("✅ TOKEN RECEIVED");
+    console.log("JWT:", decoded);
+
+    req.user = decoded;
     next();
+
   } catch (err) {
-    return res.status(401).json({ message: "Invalid token" });
+    console.log("❌ JWT ERROR:", err.message);
+
+    return res.status(401).json({
+      message: "Invalid token"
+    });
   }
 };
 
