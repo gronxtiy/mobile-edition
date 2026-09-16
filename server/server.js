@@ -42,7 +42,7 @@ const allowedOrigins = [
 
   "https://admin.gronxtiy.com",
 
-  "https://gronxtiy-beta-git-main-gronxtiy.vercel.app",
+
   "https://gronxtiy-beta-git-mobile-edition-gronxtiy.vercel.app"
 ];
 
