@@ -31,8 +31,6 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 
-
-
 const allowedOrigins = [
   "http://localhost:5176",
   "http://localhost:5177",
@@ -41,7 +39,6 @@ const allowedOrigins = [
   "https://www.gronxtiy.com",
 
   "https://admin.gronxtiy.com",
-
 
   "https://gronxtiy-beta-git-mobile-edition-gronxtiy.vercel.app"
 ];
@@ -630,7 +627,7 @@ const password = req.body.password;
     console.log("LOGIN ROLE =", role);
     console.log("LOGIN USER ID =", user._id);
 
-   res.cookie("token", token, {
+  res.cookie("token", token, {
   httpOnly: true,
   secure: true,
   sameSite: "none",
@@ -638,7 +635,7 @@ const password = req.body.password;
 });
 
 
-    
+
     res.json({
       message: "Login success",
       role,
@@ -759,7 +756,6 @@ if (!passwordRegex.test(password))
 
 
 // =================logout ==============//
-
 app.post("/logout", (req, res) => {
   res.clearCookie("token", {
     httpOnly: true,
@@ -770,8 +766,6 @@ app.post("/logout", (req, res) => {
 
   res.json({ message: "Logged out successfully" });
 });
-
-
 
 
 
@@ -1655,25 +1649,42 @@ app.put("/api/recruiter/change-password", authMiddleware, recruiterOnly, async (
 
 
 
+app.get("/api/auth/me", authMiddleware, async (req, res) => {
+  try {
+    let user;
 
-app.get("/api/recruiter/dashboard", authMiddleware, (req, res) => {
+    if (req.user.role === "student") {
+      user = await UserModel.findById(req.user.id).select("-password");
+    } else if (req.user.role === "recruiter") {
+      user = await Recruiter.findById(req.user.id).select("-password");
+    }
 
-  if (req.user.role !== "recruiter")
-    return res.status(403).json({ message: "Access denied" });
+    if (!user) {
+      return res.status(404).json({
+        message: "User not found"
+      });
+    }
 
-  res.json({ message: "Recruiter dashboard access granted" });
+    res.json({
+      authenticated: true,
+      role: req.user.role,
+      user: {
+        _id: user._id,
+        name: user.name,
+        email: user.email
+      }
+    });
 
+  } catch (err) {
+    console.error("Auth check error:", err);
+
+    res.status(500).json({
+      message: "Server error"
+    });
+  }
 });
 
 
-app.get("/api/student/dashboard", authMiddleware, (req, res) => {
-
-  if (req.user.role !== "student")
-    return res.status(403).json({ message: "Access denied" });
-
-  res.json({ message: "Student dashboard access granted" });
-
-});
 
 
 
@@ -1807,7 +1818,7 @@ app.get("/api/student/profile/me", authMiddleware, studentOnly, async (req, res)
         profileType: user.profileType || "Student",
         mainSkills: user.mainSkills || [],
         noticePeriod: user.noticePeriod || "Immediate",
-preferredLocations: user.preferredLocations || [],
+        preferredLocations: user.preferredLocations || [],
         connections: user.connections?.length || 0,
         followers: user.followers?.length || 0,
 
@@ -4642,6 +4653,8 @@ app.post("/api/admin/login", async (req, res) => {
       sameSite: "lax",
       maxAge: 24 * 60 * 60 * 1000,
     });
+
+
 
     return res.json({
       message: "Admin login successful",
