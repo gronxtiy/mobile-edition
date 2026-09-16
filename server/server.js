@@ -630,11 +630,15 @@ const password = req.body.password;
     console.log("LOGIN ROLE =", role);
     console.log("LOGIN USER ID =", user._id);
 
-    res.cookie("token", token, {
+   res.cookie("token", token, {
   httpOnly: true,
   secure: true,
-  sameSite: "none"
+  sameSite: "none",
+  path: "/"
 });
+
+
+    
     res.json({
       message: "Login success",
       role,
@@ -761,10 +765,12 @@ app.post("/logout", (req, res) => {
     httpOnly: true,
     secure: true,
     sameSite: "none",
+    path: "/"
   });
 
   res.json({ message: "Logged out successfully" });
 });
+
 
 
 
