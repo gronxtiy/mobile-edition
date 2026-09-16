@@ -31,41 +31,36 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 
+
+
+const allowedOrigins = [
+  "http://localhost:5176",
+  "http://localhost:5177",
+
+  "https://gronxtiy.com",
+  "https://www.gronxtiy.com",
+
+  "https://admin.gronxtiy.com",
+
+  "https://gronxtiy-beta-git-main-gronxtiy.vercel.app",
+  "https://gronxtiy-beta-git-mobile-edition-gronxtiy.vercel.app"
+];
+
 app.use(
   cors({
-   origin: [
- "http://localhost:5176",  // student dev
-    "http://localhost:5177",  // admin dev
-    "https://www.gronxtiy.com", // student prod
-    "https://admin.gronxtiy.com", // admin prod
-    "https://gronxtiy-beta-git-main-gronxtiy.vercel.app",
-     "https://gronxtiy-beta-git-mobile-edition-gronxtiy.vercel.app"
-
-
-
-],
+    origin: allowedOrigins,
     credentials: true,
   })
 );
 
-
-
 const io = new Server(server, {
   cors: {
-    origin: [
- "http://localhost:5176",  // student dev
-    "http://localhost:5177",  // admin dev
-    "https://www.gronxtiy.com", // student prod
-    "https://admin.gronxtiy.com", // admin prod
-    "https://gronxtiy-beta-git-main-gronxtiy.vercel.app",
-    "https://gronxtiy-beta-git-mobile-edition-gronxtiy.vercel.app"
-
-
-
-],
+    origin: allowedOrigins,
+    methods: ["GET", "POST"],
     credentials: true,
   },
 });
+
 
 
 io.on("connection", (socket) => {
