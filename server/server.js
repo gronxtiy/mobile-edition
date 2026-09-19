@@ -306,7 +306,6 @@ const Recruiter = mongoose.model("Recruiter", RecruiterSchema);
 
 
 // ================= AUTH MIDDLEWARE =================
-// ================= AUTH MIDDLEWARE =================
 
 const authMiddleware = (req, res, next) => {
   console.log("========== AUTH CHECK ==========");
@@ -344,6 +343,30 @@ const authMiddleware = (req, res, next) => {
     });
   }
 };
+
+app.get("/api/recruiter/dashboard", authMiddleware, (req, res) => {
+
+  if (req.user.role !== "recruiter")
+    return res.status(403).json({ message: "Access denied" });
+
+  res.json({ message: "Recruiter dashboard access granted" });
+
+});
+
+
+app.get("/api/student/dashboard", authMiddleware, (req, res) => {
+
+  if (req.user.role !== "student")
+    return res.status(403).json({ message: "Access denied" });
+
+  res.json({ message: "Student dashboard access granted" });
+
+});
+
+
+
+
+
 
 
 // ================= REGISTER =================
@@ -1673,25 +1696,6 @@ app.put("/api/recruiter/change-password", authMiddleware, recruiterOnly, async (
 
 
 
-
-app.get("/api/recruiter/dashboard", authMiddleware, (req, res) => {
-
-  if (req.user.role !== "recruiter")
-    return res.status(403).json({ message: "Access denied" });
-
-  res.json({ message: "Recruiter dashboard access granted" });
-
-});
-
-
-app.get("/api/student/dashboard", authMiddleware, (req, res) => {
-
-  if (req.user.role !== "student")
-    return res.status(403).json({ message: "Access denied" });
-
-  res.json({ message: "Student dashboard access granted" });
-
-});
 
 
 
