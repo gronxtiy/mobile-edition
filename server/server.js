@@ -40,7 +40,9 @@ const allowedOrigins = [
 
   "https://admin.gronxtiy.com",
 
-  "https://gronxtiy-beta-git-mobile-edition-gronxtiy.vercel.app"
+  "https://gronxtiy-beta-git-mobile-edition-gronxtiy.vercel.app",
+    "https://mobile-edition.vercel.app"
+
 ];
 
 app.use(
