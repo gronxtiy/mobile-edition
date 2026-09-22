@@ -41,13 +41,14 @@ const allowedOrigins = [
   "https://admin.gronxtiy.com",
 
   "https://gronxtiy-beta-git-mobile-edition-gronxtiy.vercel.app",
-    "https://mobile-edition.vercel.app"
+  "https://mobile-edition.vercel.app"
 
 ];
 
 app.use(
   cors({
     origin: allowedOrigins,
+      methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
     credentials: true,
   })
 );
@@ -307,16 +308,34 @@ const Recruiter = mongoose.model("Recruiter", RecruiterSchema);
 
 
 
-// ================= AUTH MIDDLEWARE =================
+
+
+
+
 
 const authMiddleware = (req, res, next) => {
   console.log("========== AUTH CHECK ==========");
   console.log("Origin:", req.headers.origin);
-  console.log("Cookie header:", req.headers.cookie);
-  console.log("Parsed cookies:", req.cookies);
+  console.log("Authorization:", req.headers.authorization);
+  console.log("Cookie:", req.headers.cookie);
 
-  const token = req.cookies?.token;
+  let token = null;
 
+  // 1. Try Bearer token
+  const authHeader = req.headers.authorization;
+
+  if (authHeader && authHeader.startsWith("Bearer ")) {
+    token = authHeader.split(" ")[1];
+    console.log("✅ Using Bearer token");
+  }
+
+  // 2. If no Bearer token, try cookie
+  if (!token && req.cookies?.userToken) {
+    token = req.cookies.userToken;
+    console.log("✅ Using cookie token");
+  }
+
+  // 3. No token
   if (!token) {
     console.log("❌ NO TOKEN RECEIVED");
 
@@ -331,20 +350,51 @@ const authMiddleware = (req, res, next) => {
       process.env.JWT_SECRET || "secret123"
     );
 
-    console.log("✅ TOKEN RECEIVED");
+    console.log("✅ TOKEN VERIFIED");
     console.log("JWT:", decoded);
 
     req.user = decoded;
+
     next();
 
   } catch (err) {
     console.log("❌ JWT ERROR:", err.message);
 
     return res.status(401).json({
-      message: "Invalid token"
+      message: "Invalid or expired token"
     });
   }
 };
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 app.get("/api/recruiter/dashboard", authMiddleware, (req, res) => {
 
@@ -363,6 +413,12 @@ app.get("/api/student/dashboard", authMiddleware, (req, res) => {
 
   res.json({ message: "Student dashboard access granted" });
 
+});
+
+
+
+app.get("/", (req, res) => {
+  res.send("Server working ✅");
 });
 
 
@@ -676,17 +732,22 @@ const password = req.body.password;
     console.log("LOGIN ROLE =", role);
     console.log("LOGIN USER ID =", user._id);
 
-  res.cookie("token", token, {
+
+
+
+res.cookie("userToken", token, {
   httpOnly: true,
   secure: true,
   sameSite: "none",
-  path: "/"
+  path: "/",
+  maxAge: 24 * 60 * 60 * 1000
 });
 
 
 
     res.json({
       message: "Login success",
+        token: token,
       role,
       user: {
         _id: user._id,
@@ -1696,27 +1757,6 @@ app.put("/api/recruiter/change-password", authMiddleware, recruiterOnly, async (
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-app.get("/", (req, res) => {
-  res.send("Server working ✅");
-});
 
 
 const FriendRequestSchema = new mongoose.Schema({
@@ -3348,17 +3388,29 @@ app.delete("/api/student/posts/:postId", authMiddleware, studentOnly, async (req
   }
 });
 
-
-
 app.post(
   "/api/student/reels",
   authMiddleware,
   studentOnly,
   upload.single("media"),
   async (req, res) => {
+    console.log("🔥 REEL ROUTE REACHED");
+
     try {
-           const { content, schedule, sharedToFeed } = req.body;
+      console.log("1️⃣ req.body:", req.body);
+      console.log("2️⃣ req.file:", req.file
+        ? {
+            originalname: req.file.originalname,
+            mimetype: req.file.mimetype,
+            size: req.file.size,
+          }
+        : null
+      );
+
+      const { content, schedule, sharedToFeed } = req.body;
+
       const user = await UserModel.findById(req.user.id);
+      console.log("3️⃣ USER FOUND:", !!user);
 
       if (!user) {
         return res.status(404).json({ message: "Student not found" });
@@ -3384,17 +3436,24 @@ app.post(
         const isVideo = req.file.mimetype.startsWith("video/");
         const isImage = req.file.mimetype.startsWith("image/");
 
+        console.log("4️⃣ isVideo:", isVideo);
+        console.log("5️⃣ isImage:", isImage);
+
         if (!isVideo && !isImage) {
           return res.status(400).json({
             message: "Only image or video files are allowed",
           });
         }
 
+        console.log("6️⃣ STARTING CLOUDINARY UPLOAD");
+
         const uploadResult = await uploadToCloudinary(
           req.file.buffer,
           "gronxtiy/reels",
           isVideo ? "video" : "image"
         );
+
+        console.log("7️⃣ CLOUDINARY RESULT:", uploadResult);
 
         cloudinaryPublicId = uploadResult.public_id || "";
         cloudinaryResourceType = isVideo ? "video" : "image";
@@ -3412,15 +3471,16 @@ app.post(
         }
       }
 
+      console.log("8️⃣ BEFORE POST.CREATE");
+
       const newReel = await Post.create({
         userId: user._id,
         author: user.name || "Student",
         profileImage: user.avatar || "",
         content: cleanContent,
         postType: detectedPostType,
-          postCategory: "reel",
-  sharedToFeed: sharedToFeed === "true",
-
+        postCategory: "reel",
+        sharedToFeed: sharedToFeed === "true",
         imageUrl,
         videoUrl,
         thumbnail,
@@ -3432,6 +3492,8 @@ app.post(
         comments: [],
       });
 
+      console.log("9️⃣ POST CREATED:", newReel._id);
+
       if (!Array.isArray(user.reelsContent)) {
         user.reelsContent = [];
       }
@@ -3442,25 +3504,37 @@ app.post(
           newReel.content ||
           (detectedPostType === "video" ? "Video Reel" : "Image Reel"),
         thumbnail:
-          newReel.thumbnail || newReel.videoUrl || newReel.imageUrl || "",
+          newReel.thumbnail ||
+          newReel.videoUrl ||
+          newReel.imageUrl ||
+          "",
         type: "reel",
         views: 0,
         duration: newReel.duration || "",
       });
 
+      console.log("🔟 BEFORE USER.SAVE");
+
       await user.save();
+
+      console.log("1️⃣1️⃣ USER SAVED");
 
       return res.status(201).json({
         message: "Reel created successfully",
         reel: newReel,
       });
+
     } catch (err) {
-      console.error("Create reel error:", err);
-      return res.status(500).json({ message: err.message || "Server error" });
+      console.error("🔥 CREATE REEL ERROR:", err);
+      console.error("🔥 ERROR MESSAGE:", err.message);
+      console.error("🔥 ERROR STACK:", err.stack);
+
+      return res.status(500).json({
+        message: err.message || "Server error",
+      });
     }
   }
 );
-
 
 // ================= GET ALL REELS =================
 
@@ -8014,20 +8088,6 @@ app.get(
     }
   }
 );
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
