@@ -53,6 +53,9 @@ export default function StudentVideosPage() {
 
     fetch(`${API_BASE}/api/student/share/users`, {
       credentials: "include",
+      headers: {
+    Authorization: `Bearer ${localStorage.getItem("token")}`,
+  },
     })
       .then(async (res) => {
         if (!res.ok) throw new Error("Failed to load users");
@@ -73,6 +76,9 @@ export default function StudentVideosPage() {
 
       const res = await fetch(`${API_BASE}/api/student/reels`, {
         credentials: "include",
+         headers: {
+    Authorization: `Bearer ${localStorage.getItem("token")}`,
+  },
       });
 
       const rawText = await res.text();
@@ -154,6 +160,9 @@ export default function StudentVideosPage() {
       const res = await fetch(`${API_BASE}/api/student/posts/${reelId}/like`, {
         method: "PUT",
         credentials: "include",
+         headers: {
+    Authorization: `Bearer ${localStorage.getItem("token")}`,
+  },
       });
 
       const rawText = await res.text();
@@ -191,6 +200,9 @@ export default function StudentVideosPage() {
       const res = await fetch(`${API_BASE}/api/student/posts/${reelId}/save`, {
         method: "PUT",
         credentials: "include",
+         headers: {
+    Authorization: `Bearer ${localStorage.getItem("token")}`,
+  },
       });
 
       const rawText = await res.text();
@@ -231,6 +243,10 @@ export default function StudentVideosPage() {
       const res = await fetch(`${API_BASE}/api/student/reels/${reelId}`, {
         method: "DELETE",
         credentials: "include",
+
+        headers: {
+    Authorization: `Bearer ${localStorage.getItem("token")}`,
+  },
       });
 
       const rawText = await res.text();
@@ -274,6 +290,7 @@ export default function StudentVideosPage() {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
+             Authorization: `Bearer ${localStorage.getItem("token")}`,
           },
           credentials: "include",
           body: JSON.stringify({ text: newComment.trim() }),
@@ -325,6 +342,9 @@ export default function StudentVideosPage() {
         {
           method: "PUT",
           credentials: "include",
+           headers: {
+    Authorization: `Bearer ${localStorage.getItem("token")}`,
+  },
         },
       );
 
@@ -382,6 +402,7 @@ export default function StudentVideosPage() {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
+             Authorization: `Bearer ${localStorage.getItem("token")}`,
           },
           credentials: "include",
           body: JSON.stringify({ text }),
@@ -455,6 +476,7 @@ export default function StudentVideosPage() {
         credentials: "include",
         headers: {
           "Content-Type": "application/json",
+           Authorization: `Bearer ${localStorage.getItem("token")}`,
         },
         body: JSON.stringify({
           receiverId: user._id,
@@ -509,6 +531,9 @@ export default function StudentVideosPage() {
       const res = await fetch(`${API_BASE}/api/student/request/${receiverId}`, {
         method: "POST",
         credentials: "include",
+         headers: {
+    Authorization: `Bearer ${localStorage.getItem("token")}`,
+  },
       });
 
       const data = await res.json();
@@ -536,6 +561,16 @@ export default function StudentVideosPage() {
 const closeReel = () => {
   setSelectedReelIndex(null);
 };
+
+
+
+
+
+
+
+
+
+
 
   return (
   <div className="reels-page-wrapper">
