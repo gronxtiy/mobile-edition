@@ -415,12 +415,15 @@ export default function StudentStatus({
     const trackView = async () => {
       try {
         await fetch(
-          `${API_BASE}/api/student/status/${currentStatus._id}/view`,
-          {
-            method: "POST",
-            credentials: "include",
-          }
-        );
+  `${API_BASE}/api/student/status/${currentStatus._id}/view`,
+  {
+    method: "POST",
+    credentials: "include",
+    headers: {
+      Authorization: `Bearer ${localStorage.getItem("token")}`,
+    },
+  }
+);
 
         await fetchStatuses();
         await fetchMyStatuses();
@@ -1401,15 +1404,16 @@ export default function StudentStatus({
 
         setError("");
 
-        const res =
-          await fetch(
-            `${API_BASE}/api/student/status`,
-            {
-              method: "GET",
-              credentials:
-                "include",
-            }
-          );
+        const res = await fetch(
+  `${API_BASE}/api/student/status`,
+  {
+    method: "GET",
+    credentials: "include",
+    headers: {
+      Authorization: `Bearer ${localStorage.getItem("token")}`,
+    },
+  }
+);
 
         const text =
           await res.text();
@@ -1470,6 +1474,9 @@ export default function StudentStatus({
               method: "GET",
               credentials:
                 "include",
+                 headers: {
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+        },
             }
           );
 
@@ -1539,16 +1546,17 @@ export default function StudentStatus({
           form.mediaFile
         );
 
-        const res =
-          await fetch(
-            `${API_BASE}/api/student/status`,
-            {
-              method: "POST",
-              credentials:
-                "include",
-              body: formData,
-            }
-          );
+        const res = await fetch(
+  `${API_BASE}/api/student/status`,
+  {
+    method: "POST",
+    credentials: "include",
+    headers: {
+      Authorization: `Bearer ${localStorage.getItem("token")}`,
+    },
+    body: formData,
+  }
+);
 
         const text =
           await res.text();
@@ -1804,8 +1812,10 @@ export default function StudentStatus({
               credentials:
                 "include",
               headers: {
-                "Content-Type":
-                  "application/json",
+                "Content-Type":"application/json",
+
+                    Authorization: `Bearer ${localStorage.getItem("token")}`,
+
               },
               body: JSON.stringify(
                 {
@@ -1899,6 +1909,7 @@ export default function StudentStatus({
               headers: {
                 "Content-Type":
                   "application/json",
+                   Authorization: `Bearer ${localStorage.getItem("token")}`,
               },
               body: JSON.stringify(
                 {
@@ -1979,14 +1990,15 @@ export default function StudentStatus({
       try {
         const res =
           await fetch(
-            `${API_BASE}/api/student/status/${currentStatus._id}`,
-            {
-              method:
-                "DELETE",
-              credentials:
-                "include",
-            }
-          );
+  `${API_BASE}/api/student/status/${currentStatus._id}`,
+  {
+    method: "DELETE",
+    credentials: "include",
+    headers: {
+      Authorization: `Bearer ${localStorage.getItem("token")}`,
+    },
+  }
+);
 
         const text =
           await res.text();
