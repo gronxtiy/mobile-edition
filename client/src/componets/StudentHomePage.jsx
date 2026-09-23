@@ -122,6 +122,9 @@ useEffect(() => {
         `${API_BASE}/api/student/trending-topics?limit=8`,
         {
           credentials: "include",
+           headers: {
+    Authorization: `Bearer ${localStorage.getItem("token")}`,
+  },
         },
       );
 
@@ -155,6 +158,9 @@ useEffect(() => {
         `${API_BASE}/api/student/posts?feed=${feedType}`,
         {
           credentials: "include",
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
         },
       );
 
@@ -279,6 +285,9 @@ useEffect(() => {
     try {
       const res = await fetch(`${API_BASE}/api/student/saved-posts`, {
         credentials: "include",
+         headers: {
+    Authorization: `Bearer ${localStorage.getItem("token")}`,
+  },
       });
 
       const data = await res.json();
@@ -334,6 +343,9 @@ useEffect(() => {
         {
           method: "PUT",
           credentials: "include",
+           headers: {
+    Authorization: `Bearer ${localStorage.getItem("token")}`,
+  },
         },
       );
 
@@ -415,6 +427,9 @@ useEffect(() => {
         {
           method: "PUT",
           credentials: "include",
+           headers: {
+    Authorization: `Bearer ${localStorage.getItem("token")}`,
+  },
         },
       );
 
@@ -549,15 +564,26 @@ useEffect(() => {
         `${API_BASE}/api/student/posts/${commentPost._id}/comments`,
         {
           method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
           credentials: "include",
+           headers: {
+             "Content-Type": "application/json",
+
+               Authorization: `Bearer ${localStorage.getItem("token")}`,
+
+
+           },
           body: JSON.stringify({
             text: newComment.trim(),
           }),
         },
       );
+
+
+
+
+
+
+
 
       const rawText = await res.text();
 
@@ -650,6 +676,9 @@ useEffect(() => {
         {
           method: "PUT",
           credentials: "include",
+           headers: {
+    Authorization: `Bearer ${localStorage.getItem("token")}`,
+  },
         },
       );
 
@@ -790,8 +819,15 @@ useEffect(() => {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
+             Authorization: `Bearer ${localStorage.getItem("token")}`,
           },
           credentials: "include",
+
+
+
+
+
+
           body: JSON.stringify({
             text,
           }),
@@ -927,6 +963,9 @@ useEffect(() => {
         {
           method: "PUT",
           credentials: "include",
+           headers: {
+    Authorization: `Bearer ${localStorage.getItem("token")}`,
+  },
         },
       );
 
