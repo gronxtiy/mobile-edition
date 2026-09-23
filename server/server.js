@@ -3388,56 +3388,124 @@ app.delete("/api/student/posts/:postId", authMiddleware, studentOnly, async (req
   }
 });
 
+
+
+
+
+
 app.post(
   "/api/student/reels",
   authMiddleware,
   studentOnly,
-  upload.single("media"),
+  upload.fields([
+    { name: "media", maxCount: 1 },
+    { name: "cover", maxCount: 1 },
+  ]),
   async (req, res) => {
     console.log("🔥 REEL ROUTE REACHED");
 
     try {
       console.log("1️⃣ req.body:", req.body);
-      console.log("2️⃣ req.file:", req.file
-        ? {
-            originalname: req.file.originalname,
-            mimetype: req.file.mimetype,
-            size: req.file.size,
-          }
-        : null
+      console.log("2️⃣ req.files:", req.files);
+
+      const {
+        content,
+        schedule,
+        sharedToFeed,
+        trimStart,
+        trimEnd,
+        selectedCoverTime,
+        cropX,
+        cropY,
+        cropZoom,
+        cropAspect,
+        videoMuted,
+      } = req.body;
+
+      // ============================================
+      // GET FILES FROM MULTER
+      // ============================================
+
+      const mediaFile = req.files?.media?.[0];
+      const coverFile = req.files?.cover?.[0];
+
+      console.log(
+        "3️⃣ MEDIA FILE:",
+        mediaFile
+          ? {
+              originalname: mediaFile.originalname,
+              mimetype: mediaFile.mimetype,
+              size: mediaFile.size,
+            }
+          : "NO MEDIA"
       );
 
-      const { content, schedule, sharedToFeed } = req.body;
+      console.log(
+        "4️⃣ COVER FILE:",
+        coverFile
+          ? {
+              originalname: coverFile.originalname,
+              mimetype: coverFile.mimetype,
+              size: coverFile.size,
+            }
+          : "NO COVER"
+      );
+
+      // ============================================
+      // FIND USER
+      // ============================================
 
       const user = await UserModel.findById(req.user.id);
-      console.log("3️⃣ USER FOUND:", !!user);
+
+      console.log("5️⃣ USER FOUND:", !!user);
 
       if (!user) {
-        return res.status(404).json({ message: "Student not found" });
+        return res.status(404).json({
+          message: "Student not found",
+        });
       }
+
+      // ============================================
+      // CLEAN CONTENT
+      // ============================================
 
       const cleanContent = content?.trim() || "";
 
-      if (!cleanContent && !req.file) {
+      // ============================================
+      // CHECK CONTENT / MEDIA
+      // ============================================
+
+      if (!cleanContent && !mediaFile) {
         return res.status(400).json({
           message: "Reel content or media is required",
         });
       }
 
+      // ============================================
+      // DEFAULT VALUES
+      // ============================================
+
       let detectedPostType = "text";
+
       let imageUrl = "";
       let videoUrl = "";
       let thumbnail = "";
+
       let duration = "";
+
       let cloudinaryPublicId = "";
       let cloudinaryResourceType = "";
 
-      if (req.file) {
-        const isVideo = req.file.mimetype.startsWith("video/");
-        const isImage = req.file.mimetype.startsWith("image/");
+      // ============================================
+      // UPLOAD MAIN MEDIA
+      // ============================================
 
-        console.log("4️⃣ isVideo:", isVideo);
-        console.log("5️⃣ isImage:", isImage);
+      if (mediaFile) {
+        const isVideo = mediaFile.mimetype.startsWith("video/");
+        const isImage = mediaFile.mimetype.startsWith("image/");
+
+        console.log("6️⃣ IS VIDEO:", isVideo);
+        console.log("7️⃣ IS IMAGE:", isImage);
 
         if (!isVideo && !isImage) {
           return res.status(400).json({
@@ -3445,96 +3513,263 @@ app.post(
           });
         }
 
-        console.log("6️⃣ STARTING CLOUDINARY UPLOAD");
+        console.log("8️⃣ UPLOADING MEDIA TO CLOUDINARY...");
 
         const uploadResult = await uploadToCloudinary(
-          req.file.buffer,
+          mediaFile.buffer,
           "gronxtiy/reels",
           isVideo ? "video" : "image"
         );
 
-        console.log("7️⃣ CLOUDINARY RESULT:", uploadResult);
+        console.log("9️⃣ CLOUDINARY RESULT:", uploadResult);
+
+        if (!uploadResult?.secure_url) {
+          return res.status(500).json({
+            message: "Media upload failed",
+          });
+        }
 
         cloudinaryPublicId = uploadResult.public_id || "";
-        cloudinaryResourceType = isVideo ? "video" : "image";
+
+        cloudinaryResourceType = isVideo
+          ? "video"
+          : "image";
+
+        // ============================================
+        // IMAGE REEL
+        // ============================================
 
         if (isImage) {
           detectedPostType = "image";
+
           imageUrl = uploadResult.secure_url;
+
           thumbnail = uploadResult.secure_url;
         }
+
+        // ============================================
+        // VIDEO REEL
+        // ============================================
 
         if (isVideo) {
           detectedPostType = "video";
+
           videoUrl = uploadResult.secure_url;
+
+          // Temporary thumbnail
           thumbnail = uploadResult.secure_url;
+
+          // Save trim information if available
+          if (trimStart && trimEnd) {
+            duration = `${trimStart}-${trimEnd}`;
+          }
         }
       }
 
-      console.log("8️⃣ BEFORE POST.CREATE");
+      // ============================================
+      // UPLOAD VIDEO COVER
+      // ============================================
 
-      const newReel = await Post.create({
-        userId: user._id,
-        author: user.name || "Student",
-        profileImage: user.avatar || "",
-        content: cleanContent,
-        postType: detectedPostType,
-        postCategory: "reel",
-        sharedToFeed: sharedToFeed === "true",
-        imageUrl,
-        videoUrl,
-        thumbnail,
-        duration,
-        cloudinaryPublicId,
-        cloudinaryResourceType,
-        schedule: schedule ? new Date(schedule) : null,
-        likes: [],
-        comments: [],
-      });
+      if (coverFile) {
+        try {
+          console.log("🔟 UPLOADING COVER TO CLOUDINARY...");
 
-      console.log("9️⃣ POST CREATED:", newReel._id);
+          const coverUpload = await uploadToCloudinary(
+            coverFile.buffer,
+            "gronxtiy/reels/covers",
+            "image"
+          );
 
-      if (!Array.isArray(user.reelsContent)) {
+          console.log(
+            "1️⃣1️⃣ COVER CLOUDINARY RESULT:",
+            coverUpload
+          );
+
+          if (coverUpload?.secure_url) {
+            thumbnail = coverUpload.secure_url;
+          }
+        } catch (coverError) {
+          console.error(
+            "❌ COVER UPLOAD ERROR:",
+            coverError
+          );
+
+          // Do not fail the complete reel just because cover failed
+        }
+      }
+
+      // ============================================
+      // CREATE REEL
+      // ============================================
+
+      console.log("1️⃣2️⃣ CREATING REEL...");
+const newReel = await Post.create({
+  // Required by your Post schema
+  userId: user._id,
+
+  // User reference
+  user: user._id,
+
+  author: user._id,
+
+  content: cleanContent,
+
+  postCategory: "reel",
+
+  postType: detectedPostType,
+
+  image: imageUrl,
+
+  imageUrl: imageUrl,
+
+  video: videoUrl,
+
+  videoUrl: videoUrl,
+
+  thumbnail: thumbnail,
+
+  duration: duration,
+
+  cloudinaryPublicId: cloudinaryPublicId,
+
+  cloudinaryResourceType: cloudinaryResourceType,
+
+  sharedToFeed:
+    sharedToFeed === "true" ||
+    sharedToFeed === true,
+
+  visibility: "public",
+
+  scheduledFor:
+    schedule && schedule !== ""
+      ? new Date(schedule)
+      : null,
+
+  trimStart: trimStart || "",
+
+  trimEnd: trimEnd || "",
+
+  selectedCoverTime:
+    selectedCoverTime || "",
+
+  cropX: cropX || "",
+
+  cropY: cropY || "",
+
+  cropZoom: cropZoom || "",
+
+  cropAspect: cropAspect || "",
+
+  videoMuted:
+    videoMuted === "true" ||
+    videoMuted === true,
+
+  likes: [],
+
+  comments: [],
+
+  createdAt: new Date(),
+
+  updatedAt: new Date(),
+});
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+      console.log(
+        "1️⃣3️⃣ REEL CREATED:",
+        newReel._id
+      );
+
+      // ============================================
+      // ADD REEL TO USER PROFILE
+      // ============================================
+
+      if (!user.reelsContent) {
         user.reelsContent = [];
       }
 
       user.reelsContent.unshift({
-        id: newReel._id.toString(),
-        title:
-          newReel.content ||
-          (detectedPostType === "video" ? "Video Reel" : "Image Reel"),
-        thumbnail:
-          newReel.thumbnail ||
-          newReel.videoUrl ||
-          newReel.imageUrl ||
-          "",
-        type: "reel",
-        views: 0,
-        duration: newReel.duration || "",
-      });
+        reelId: newReel._id,
 
-      console.log("🔟 BEFORE USER.SAVE");
+        postId: newReel._id,
+
+        content: cleanContent,
+
+        videoUrl: videoUrl,
+
+        imageUrl: imageUrl,
+
+        thumbnail: thumbnail,
+
+        createdAt: new Date(),
+      });
 
       await user.save();
 
-      console.log("1️⃣1️⃣ USER SAVED");
+      console.log("1️⃣4️⃣ USER UPDATED");
+
+      // ============================================
+      // RESPONSE
+      // ============================================
 
       return res.status(201).json({
+        success: true,
+
         message: "Reel created successfully",
+
         reel: newReel,
       });
-
     } catch (err) {
-      console.error("🔥 CREATE REEL ERROR:", err);
-      console.error("🔥 ERROR MESSAGE:", err.message);
-      console.error("🔥 ERROR STACK:", err.stack);
+      console.error(
+        "❌ CREATE REEL ERROR:",
+        err
+      );
+
+      console.error(
+        "❌ ERROR MESSAGE:",
+        err.message
+      );
+
+      console.error(
+        "❌ ERROR STACK:",
+        err.stack
+      );
 
       return res.status(500).json({
-        message: err.message || "Server error",
+        success: false,
+
+        message:
+          err.message ||
+          "Failed to create reel",
       });
     }
   }
 );
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 // ================= GET ALL REELS =================
 
@@ -8088,6 +8323,20 @@ app.get(
     }
   }
 );
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
