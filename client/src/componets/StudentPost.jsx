@@ -1377,6 +1377,9 @@ export default function StudentPost({ onBack }) {
           {
             method: "POST",
             credentials: "include",
+             headers: {
+        Authorization: `Bearer ${localStorage.getItem("token")}`,
+      },
             body: formData,
           }
         );
