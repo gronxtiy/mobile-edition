@@ -12,7 +12,7 @@ export default function TrendingAllPostsPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch(`${API_BASE}/api/student/posts/trending`, {
+    fetch(`${API_BASE}/posts/trending`, {
       credentials: "include",
     })
       .then((res) => res.json())

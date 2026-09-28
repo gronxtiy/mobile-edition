@@ -1,5 +1,8 @@
+
 import React, { useEffect, useState } from "react";
 import axios from "axios";
+import { useNavigate } from "react-router-dom";
+
 import {
   Building2,
   Mail,
@@ -7,12 +10,16 @@ import {
   Lock,
   Save,
   ShieldCheck,
+  LogOut,
 } from "lucide-react";
+
 import "./Setting.css";
 
 const API_BASE = import.meta.env.VITE_API_URL;
 
 export default function Settings() {
+  const navigate = useNavigate();
+
   const [form, setForm] = useState({
     company: "",
     email: "",
@@ -28,6 +35,7 @@ export default function Settings() {
   const [loading, setLoading] = useState(true);
   const [savingProfile, setSavingProfile] = useState(false);
   const [savingPassword, setSavingPassword] = useState(false);
+
   const [message, setMessage] = useState("");
   const [passwordMessage, setPasswordMessage] = useState("");
 
@@ -39,9 +47,12 @@ export default function Settings() {
     try {
       setLoading(true);
 
-      const res = await axios.get(`${API_BASE}/api/recruiter/settings`, {
-        withCredentials: true,
-      });
+      const res = await axios.get(
+        `${API_BASE}/api/recruiter/settings`,
+        {
+          withCredentials: true,
+        }
+      );
 
       const recruiter = res.data?.recruiter || {};
 
@@ -52,30 +63,71 @@ export default function Settings() {
       });
     } catch (err) {
       console.error("Fetch recruiter settings error:", err);
-      setMessage(err.response?.data?.message || "Failed to load settings");
+
+      setMessage(
+        err.response?.data?.message || "Failed to load settings"
+      );
     } finally {
       setLoading(false);
     }
   };
 
+  // --------------------------------------------------
+  // LOGOUT
+  // --------------------------------------------------
+
+  const logout = async () => {
+    try {
+      await axios.post(
+        `${API_BASE}/logout`,
+        {},
+        {
+          withCredentials: true,
+        }
+      );
+
+      navigate("/login");
+    } catch (err) {
+      console.error("Logout error:", err);
+
+      // Even if logout API fails, send user to login
+      navigate("/login");
+    }
+  };
+
+  // --------------------------------------------------
+  // PROFILE CHANGE
+  // --------------------------------------------------
+
   const handleProfileChange = (e) => {
     const { name, value } = e.target;
+
     setForm((prev) => ({
       ...prev,
       [name]: value,
     }));
   };
 
+  // --------------------------------------------------
+  // PASSWORD CHANGE
+  // --------------------------------------------------
+
   const handlePasswordChange = (e) => {
     const { name, value } = e.target;
+
     setPasswordForm((prev) => ({
       ...prev,
       [name]: value,
     }));
   };
 
+  // --------------------------------------------------
+  // SAVE PROFILE
+  // --------------------------------------------------
+
   const handleSaveProfile = async (e) => {
     e.preventDefault();
+
     setMessage("");
 
     try {
@@ -88,20 +140,33 @@ export default function Settings() {
           email: form.email,
           phone: form.phone,
         },
-        { withCredentials: true }
+        {
+          withCredentials: true,
+        }
       );
 
-      setMessage(res.data?.message || "Settings updated successfully");
+      setMessage(
+        res.data?.message || "Settings updated successfully"
+      );
     } catch (err) {
       console.error("Update recruiter settings error:", err);
-      setMessage(err.response?.data?.message || "Failed to update settings");
+
+      setMessage(
+        err.response?.data?.message ||
+          "Failed to update settings"
+      );
     } finally {
       setSavingProfile(false);
     }
   };
 
+  // --------------------------------------------------
+  // CHANGE PASSWORD
+  // --------------------------------------------------
+
   const handleChangePassword = async (e) => {
     e.preventDefault();
+
     setPasswordMessage("");
 
     try {
@@ -114,10 +179,14 @@ export default function Settings() {
           newPassword: passwordForm.newPassword,
           confirmPassword: passwordForm.confirmPassword,
         },
-        { withCredentials: true }
+        {
+          withCredentials: true,
+        }
       );
 
-      setPasswordMessage(res.data?.message || "Password changed successfully");
+      setPasswordMessage(
+        res.data?.message || "Password changed successfully"
+      );
 
       setPasswordForm({
         currentPassword: "",
@@ -126,38 +195,84 @@ export default function Settings() {
       });
     } catch (err) {
       console.error("Recruiter change password error:", err);
+
       setPasswordMessage(
-        err.response?.data?.message || "Failed to change password"
+        err.response?.data?.message ||
+          "Failed to change password"
       );
     } finally {
       setSavingPassword(false);
     }
   };
 
+  // --------------------------------------------------
+  // LOADING
+  // --------------------------------------------------
+
   if (loading) {
-    return <div className="recruiter-settings-loading">Loading settings...</div>;
+    return (
+      <div className="recruiter-settings-loading">
+        Loading settings...
+      </div>
+    );
   }
+
+  // --------------------------------------------------
+  // UI
+  // --------------------------------------------------
 
   return (
     <div className="recruiter-settings-page">
+
       <div className="recruiter-settings-container">
+
+        {/* HEADER */}
         <div className="recruiter-settings-header">
-          <h1>Recruiter Settings</h1>
-          <p>Update your company, email, phone number and password.</p>
+
+          <div>
+            <h1>Recruiter Settings</h1>
+
+            <p>
+              Update your company, email, phone number and password.
+            </p>
+          </div>
+
+          {/* LOGOUT BUTTON */}
+          <button
+            type="button"
+            className="recruiter-settings-logout-btn"
+            onClick={logout}
+          >
+            <LogOut size={18} />
+            <span>Logout</span>
+          </button>
+
         </div>
 
+        {/* SETTINGS GRID */}
         <div className="recruiter-settings-grid">
+
+          {/* ACCOUNT INFORMATION */}
           <div className="settings-card">
+
             <div className="card-title-row">
               <ShieldCheck size={20} />
               <h2>Account Information</h2>
             </div>
 
-            <form onSubmit={handleSaveProfile} className="settings-form">
+            <form
+              onSubmit={handleSaveProfile}
+              className="settings-form"
+            >
+
               <div className="settings-field">
+
                 <label>Company Name</label>
+
                 <div className="input-wrap">
+
                   <Building2 size={18} />
+
                   <input
                     type="text"
                     name="company"
@@ -165,13 +280,19 @@ export default function Settings() {
                     onChange={handleProfileChange}
                     placeholder="Enter company name"
                   />
+
                 </div>
+
               </div>
 
               <div className="settings-field">
+
                 <label>Email ID</label>
+
                 <div className="input-wrap">
+
                   <Mail size={18} />
+
                   <input
                     type="email"
                     name="email"
@@ -179,13 +300,19 @@ export default function Settings() {
                     onChange={handleProfileChange}
                     placeholder="Enter email address"
                   />
+
                 </div>
+
               </div>
 
               <div className="settings-field">
+
                 <label>Phone Number</label>
+
                 <div className="input-wrap">
+
                   <Phone size={18} />
+
                   <input
                     type="text"
                     name="phone"
@@ -193,33 +320,59 @@ export default function Settings() {
                     onChange={handleProfileChange}
                     placeholder="Enter phone number"
                   />
+
                 </div>
+
               </div>
 
-              {message && <p className="settings-message">{message}</p>}
+              {message && (
+                <p className="settings-message">
+                  {message}
+                </p>
+              )}
 
               <button
                 type="submit"
                 className="settings-save-btn"
                 disabled={savingProfile}
               >
+
                 <Save size={18} />
-                {savingProfile ? "Saving..." : "Save Changes"}
+
+                {savingProfile
+                  ? "Saving..."
+                  : "Save Changes"}
+
               </button>
+
             </form>
+
           </div>
 
+          {/* CHANGE PASSWORD */}
           <div className="settings-card">
+
             <div className="card-title-row">
+
               <Lock size={20} />
+
               <h2>Change Password</h2>
+
             </div>
 
-            <form onSubmit={handleChangePassword} className="settings-form">
+            <form
+              onSubmit={handleChangePassword}
+              className="settings-form"
+            >
+
               <div className="settings-field">
+
                 <label>Current Password</label>
+
                 <div className="input-wrap">
+
                   <Lock size={18} />
+
                   <input
                     type="password"
                     name="currentPassword"
@@ -227,13 +380,19 @@ export default function Settings() {
                     onChange={handlePasswordChange}
                     placeholder="Enter current password"
                   />
+
                 </div>
+
               </div>
 
               <div className="settings-field">
+
                 <label>New Password</label>
+
                 <div className="input-wrap">
+
                   <Lock size={18} />
+
                   <input
                     type="password"
                     name="newPassword"
@@ -241,13 +400,19 @@ export default function Settings() {
                     onChange={handlePasswordChange}
                     placeholder="Enter new password"
                   />
+
                 </div>
+
               </div>
 
               <div className="settings-field">
+
                 <label>Confirm New Password</label>
+
                 <div className="input-wrap">
+
                   <Lock size={18} />
+
                   <input
                     type="password"
                     name="confirmPassword"
@@ -255,11 +420,15 @@ export default function Settings() {
                     onChange={handlePasswordChange}
                     placeholder="Confirm new password"
                   />
+
                 </div>
+
               </div>
 
               {passwordMessage && (
-                <p className="settings-message">{passwordMessage}</p>
+                <p className="settings-message">
+                  {passwordMessage}
+                </p>
               )}
 
               <button
@@ -267,13 +436,23 @@ export default function Settings() {
                 className="settings-save-btn"
                 disabled={savingPassword}
               >
+
                 <Save size={18} />
-                {savingPassword ? "Updating..." : "Update Password"}
+
+                {savingPassword
+                  ? "Updating..."
+                  : "Update Password"}
+
               </button>
+
             </form>
+
           </div>
+
         </div>
+
       </div>
+
     </div>
   );
 }

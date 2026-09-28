@@ -224,25 +224,66 @@ export default function CoursePlayerPage() {
           <h1>{course.title || "Untitled Course"}</h1>
 
           <div className="student-course-player-owner">
-            {course.userId?.avatar ? (
-              <img
-                src={course.userId.avatar}
-                alt={course.userId?.name}
-                className="student-course-player-owner-img"
-              />
-            ) : (
-              <div className="student-course-player-owner-fallback">
-                {(course.userId?.name || course.author || "ST")
-                  .split(" ")
-                  .map((w) => w[0])
-                  .join("")
-                  .slice(0, 2)
-                  .toUpperCase()}
-              </div>
-            )}
+
+
+
+
+
+
+
+
+
+{course.userId?.courseProfile?.avatar ? (
+  <img
+    src={course.userId.courseProfile.avatar}
+    alt={
+      course.userId?.courseProfile?.name ||
+      course.userId?.name ||
+      "Student"
+    }
+    className="student-course-player-owner-img"
+  />
+) : (
+  <div className="student-course-player-owner-fallback">
+    {(
+      course.userId?.courseProfile?.name ||
+      course.userId?.name ||
+      course.author ||
+      "ST"
+    )
+      .split(" ")
+      .map((w) => w[0])
+      .join("")
+      .slice(0, 2)
+      .toUpperCase()}
+  </div>
+)}
+
+
+
+
+
+
+
+
+
+
+
+
 
             <div>
-              <h3>{course.userId?.name || course.author || "Student"}</h3>
+
+
+<h3>
+  {course.userId?.courseProfile?.name ||
+    course.userId?.name ||
+    course.author ||
+    "Student"}
+</h3>
+
+
+
+
               <p>
                 {course.views || 0} views • {course.likesCount || 0} likes •{" "}
                 {course.commentsCount || 0} comments

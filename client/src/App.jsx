@@ -6,14 +6,14 @@ import Register from './Register';
 import ForgotPassword from './ForgotPassword';
 import ResetPassword from './ResetPassword';
 import JobScreen from './JobScreen';
-import Dashboard from './componets/Dashboard';
 import Logout from './componets/Logout';
 import CreatePost from './componets/CreatePost';
+import StudentDashboard from './componets/StudentDashboard';
+
 
 import MyApplications from './MyApplications';
 import RecruiterRegister from './componets/RecruiterRegister';
 import ProtectedRoute from './componets/ProtectedRoute';
-import StudentDashboard from './componets/StudentDashboard';
 import SelectRole from './componets/SelectRole';
 import PostJob from './Recutier/PostJob';
 
@@ -84,7 +84,6 @@ function App() {
         <Route path="/resetpassword/:id/:token" element={<ResetPassword />} />
         <Route path="/jobscreen" element={<JobScreen />} />
         <Route path="/logout" element={<Logout />} />
-        <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/createpost" element={<CreatePost />} />
         <Route path="/myapplications" element={<MyApplications />} />
         <Route path="/recruiterregister" element={<RecruiterRegister />} />
@@ -114,6 +113,14 @@ function App() {
 
 
 
+        <Route
+          path="/student/dashboard"
+          element={
+            <ProtectedRoute allowedRole="student">
+              <StudentDashboard />
+            </ProtectedRoute>
+          }
+        />
 
 
 
@@ -311,15 +318,7 @@ function App() {
           }
         />
 
-        <Route
-          path="/student/dashboard"
-          element={
-            <ProtectedRoute allowedRole="student">
-              <StudentDashboard />
-            </ProtectedRoute>
-          }
-        />
-
+        
         <Route
           path="/student/jobs"
           element={

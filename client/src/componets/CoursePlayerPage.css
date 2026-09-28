@@ -326,3 +326,486 @@
   margin: 0;
   color: #94a3b8;
 }
+
+
+
+
+/* =========================================================
+   COURSE PLAYER - MOBILE EDITION
+   ========================================================= */
+
+@media (max-width: 768px) {
+
+  /* Main page */
+  .student-course-player-page {
+    width: 100%;
+    min-height: 100vh;
+    padding: 12px;
+    margin: 0;
+    background: #0f172a;
+    overflow-x: hidden;
+    box-sizing: border-box;
+  }
+
+  /* Top bar */
+  .student-course-player-topbar {
+    width: 100%;
+    min-height: 46px;
+    margin-bottom: 14px;
+    gap: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    box-sizing: border-box;
+  }
+
+  /* Back button */
+  .student-course-player-back-btn {
+    height: 40px;
+    padding: 0 12px;
+    border-radius: 10px;
+    gap: 6px;
+    font-size: 14px;
+    flex-shrink: 0;
+    white-space: nowrap;
+  }
+
+  .student-course-player-back-btn svg {
+    width: 17px;
+    height: 17px;
+  }
+
+  /* Right side buttons */
+  .student-course-player-topbar-right {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 7px;
+    flex-shrink: 0;
+  }
+
+  /* Notification button */
+  .student-course-player-icon-btn {
+    width: 40px;
+    height: 40px;
+    min-width: 40px;
+    border-radius: 50%;
+    padding: 0;
+  }
+
+  .student-course-player-icon-btn svg {
+    width: 18px;
+    height: 18px;
+  }
+
+  /* Delete button */
+  .student-course-player-delete-btn {
+    height: 40px;
+    padding: 0 11px;
+    border-radius: 10px;
+    gap: 6px;
+    font-size: 13px;
+    flex-shrink: 0;
+    white-space: nowrap;
+  }
+
+  .student-course-player-delete-btn svg {
+    width: 16px;
+    height: 16px;
+  }
+
+  /* Main layout */
+  .student-course-player-layout {
+    width: 100%;
+    max-width: none;
+    margin: 0;
+    display: block;
+    box-sizing: border-box;
+  }
+
+  /* Video container */
+  .student-course-video-box {
+    width: 100%;
+    height: auto;
+    margin: 0;
+    border-radius: 14px;
+    overflow: hidden;
+    background: #000;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.25);
+  }
+
+  /* Video */
+  .student-course-video-frame {
+    width: 100%;
+    height: auto;
+    min-height: 210px;
+    max-height: 65vh;
+    aspect-ratio: 16 / 9;
+    object-fit: contain;
+    display: block;
+    background: #000;
+  }
+
+  /* Course information */
+  .student-course-player-info {
+    width: 100%;
+    margin-top: 12px;
+    padding: 15px;
+    border-radius: 14px;
+    background: rgba(255, 255, 255, 0.04);
+    box-sizing: border-box;
+    overflow: visible;
+  }
+
+  /* Course title */
+  .student-course-player-info h1 {
+    margin: 0 0 13px;
+    font-size: 21px;
+    line-height: 1.35;
+    font-weight: 700;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+  }
+
+  /* Owner section */
+  .student-course-player-owner {
+    width: 100%;
+    margin-bottom: 15px;
+    gap: 10px;
+    display: flex;
+    align-items: center;
+    box-sizing: border-box;
+  }
+
+  .student-course-player-owner-img,
+  .student-course-player-owner-fallback {
+    width: 44px;
+    height: 44px;
+    min-width: 44px;
+    border-radius: 50%;
+  }
+
+  .student-course-player-owner h3 {
+    margin: 0 0 3px;
+    font-size: 15px;
+    line-height: 1.3;
+    overflow-wrap: anywhere;
+  }
+
+  .student-course-player-owner p {
+    margin: 0;
+    font-size: 12px;
+    line-height: 1.4;
+    color: #cbd5e1;
+    overflow-wrap: anywhere;
+  }
+
+  /* Action buttons */
+  .student-course-player-actions {
+    width: 100%;
+    margin: 14px 0 16px;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    box-sizing: border-box;
+  }
+
+  .student-course-action-btn {
+    min-height: 38px;
+    padding: 8px 11px;
+    border-radius: 10px;
+    gap: 6px;
+    font-size: 13px;
+    flex: 0 0 auto;
+    white-space: nowrap;
+  }
+
+  .student-course-action-btn svg {
+    width: 16px;
+    height: 16px;
+    flex-shrink: 0;
+  }
+
+  /* Description */
+  .student-course-player-description {
+    width: 100%;
+    margin-top: 4px;
+    font-size: 14px;
+    line-height: 1.65;
+    color: #e2e8f0;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+  }
+
+  /* Comments box */
+  .student-course-comments-box {
+    width: 100%;
+    margin-top: 18px;
+    padding: 14px;
+    border-radius: 14px;
+    box-sizing: border-box;
+    background: #0f172a;
+    overflow: visible;
+  }
+
+  .student-course-comments-box h2 {
+    margin: 0;
+    font-size: 19px;
+    line-height: 1.4;
+  }
+
+  /* Comment input */
+  .student-course-comment-input-wrap {
+    width: 100%;
+    margin: 12px 0 16px;
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    box-sizing: border-box;
+  }
+
+  .student-course-comment-input {
+    min-width: 0;
+    width: 100%;
+    height: 42px;
+    padding: 0 11px;
+    border-radius: 10px;
+    font-size: 14px;
+    box-sizing: border-box;
+  }
+
+  .student-course-comment-send-btn {
+    width: 42px;
+    height: 42px;
+    min-width: 42px;
+    padding: 0;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+
+  .student-course-comment-send-btn svg {
+    width: 17px;
+    height: 17px;
+  }
+
+  /* Comments list */
+  .student-course-comments-list {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  /* Individual comment */
+  .student-course-comment-item {
+    width: 100%;
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    box-sizing: border-box;
+  }
+
+  /* Comment avatar */
+  .student-course-comment-avatar {
+    flex-shrink: 0;
+  }
+
+  .student-course-comment-avatar img,
+  .student-course-comment-avatar span {
+    width: 36px;
+    height: 36px;
+    min-width: 36px;
+    border-radius: 50%;
+    font-size: 13px;
+  }
+
+  /* Comment content */
+  .student-course-comment-content {
+    min-width: 0;
+    width: auto;
+    flex: 1;
+    padding: 9px 11px;
+    border-radius: 11px;
+    box-sizing: border-box;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+  }
+
+  .student-course-comment-content h4 {
+    margin: 0 0 3px;
+    font-size: 13px;
+    line-height: 1.3;
+  }
+
+  .student-course-comment-content p {
+    margin: 0;
+    font-size: 13px;
+    line-height: 1.5;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+  }
+
+  .student-course-no-comments {
+    font-size: 13px;
+  }
+
+  /* Empty/loading page */
+  .student-course-player-empty {
+    width: 100%;
+    min-height: 100vh;
+    padding: 20px;
+    box-sizing: border-box;
+    text-align: center;
+  }
+}
+
+
+/* =========================================================
+   VERY SMALL PHONES
+   ========================================================= */
+
+@media (max-width: 420px) {
+
+  .student-course-player-page {
+    padding: 9px;
+  }
+
+  .student-course-player-topbar {
+    margin-bottom: 11px;
+  }
+
+  .student-course-player-back-btn {
+    height: 38px;
+    padding: 0 10px;
+    font-size: 13px;
+  }
+
+  .student-course-player-icon-btn {
+    width: 38px;
+    height: 38px;
+    min-width: 38px;
+  }
+
+  .student-course-player-delete-btn {
+    height: 38px;
+    padding: 0 9px;
+    font-size: 12px;
+  }
+
+  .student-course-video-box {
+    border-radius: 11px;
+  }
+
+  .student-course-video-frame {
+    min-height: 190px;
+    max-height: 55vh;
+  }
+
+  .student-course-player-info {
+    margin-top: 10px;
+    padding: 12px;
+    border-radius: 12px;
+  }
+
+  .student-course-player-info h1 {
+    font-size: 19px;
+  }
+
+  .student-course-player-owner-img,
+  .student-course-player-owner-fallback {
+    width: 40px;
+    height: 40px;
+    min-width: 40px;
+  }
+
+  .student-course-player-owner h3 {
+    font-size: 14px;
+  }
+
+  .student-course-player-owner p {
+    font-size: 11px;
+  }
+
+  .student-course-player-actions {
+    gap: 6px;
+  }
+
+  .student-course-action-btn {
+    min-height: 36px;
+    padding: 7px 9px;
+    font-size: 12px;
+  }
+
+  .student-course-action-btn svg {
+    width: 15px;
+    height: 15px;
+  }
+
+  .student-course-comments-box {
+    padding: 12px;
+  }
+
+  .student-course-comments-box h2 {
+    font-size: 18px;
+  }
+
+  .student-course-comment-input {
+    font-size: 13px;
+  }
+}
+
+
+/* =========================================================
+   EXTRA SMALL PHONES
+   ========================================================= */
+
+@media (max-width: 360px) {
+
+  .student-course-player-page {
+    padding: 7px;
+  }
+
+  .student-course-player-back-btn {
+    padding: 0 8px;
+  }
+
+  .student-course-player-back-btn {
+    font-size: 0;
+  }
+
+  .student-course-player-back-btn svg {
+    width: 18px;
+    height: 18px;
+    margin: 0;
+  }
+
+  .student-course-player-delete-btn {
+    font-size: 0;
+    width: 38px;
+    padding: 0;
+    justify-content: center;
+  }
+
+  .student-course-player-delete-btn svg {
+    width: 17px;
+    height: 17px;
+  }
+
+  .student-course-player-actions {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .student-course-action-btn {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .student-course-video-frame {
+    min-height: 180px;
+  }
+}

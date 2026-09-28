@@ -1,7 +1,7 @@
 import { Heart, MessageCircle, Send, X } from "lucide-react";
 
 import { useEffect, useState } from "react";
-import { useLocation, useParams } from "react-router-dom";
+import { useLocation, useNavigate, useParams } from "react-router-dom";
 import "./StudentNotificationPostDetails.css";
 import "./StudentHomePage.css";
 
@@ -10,6 +10,7 @@ const API_BASE = import.meta.env.VITE_API_URL;
 export default function StudentNotificationPostDetails() {
   const { id } = useParams();
   const location = useLocation();
+  const navigate = useNavigate();
 
   const [post, setPost] = useState(null);
 
@@ -23,15 +24,17 @@ export default function StudentNotificationPostDetails() {
   const [replyText, setReplyText] = useState({});
   const [commentPost, setCommentPost] = useState(null);
 
-  useEffect(() => {
-    const params = new URLSearchParams(location.search);
+ useEffect(() => {
+  fetchPost();
+}, [id]);
 
-    if (params.get("comment") === "true") {
-      setCommentPost(post);
-    }
+useEffect(() => {
+  const params = new URLSearchParams(location.search);
 
-    fetchPost();
-  }, [id]);
+  if (params.get("comment") === "true" && post) {
+    setCommentPost(post);
+  }
+}, [location.search, post]);
 
   const fetchPost = async () => {
     try {

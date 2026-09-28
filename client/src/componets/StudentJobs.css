@@ -272,7 +272,7 @@
 
     padding-right: 8px;
 
-    font-size: 13px;
+    font-size: 10px;
   }
 
 
@@ -2262,4 +2262,23 @@
     margin: 20px 16px 30px 16px !important;
   }
 
+}
+
+@media (max-width: 768px) {
+  .jobs-container .search-box {
+    position: relative;
+  }
+
+  .jobs-container .search-input {
+    padding-left: 12px !important;
+  }
+
+  .jobs-container .search-icon {
+    position: absolute;
+    left: 14px;
+    top: 50%;
+    transform: translateY(-50%);
+    z-index: 2;
+    pointer-events: none;
+  }
 }

@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
+
 import {
   Search,
   Plus,
@@ -293,8 +294,12 @@ export default function StudentCourses() {
             owner: {
               _id: myProfile?._id || newCourse.userId,
               name: courseProfileForm.name || newCourse.author || "Student",
-              avatar: newCourse.profileImage || courseProfileForm.avatarPreview || "",
-              headline: "",
+avatar:
+  courseProfileForm.avatarPreview ||
+  newCourse.profileImage ||
+  "",
+  
+  headline: "",
             },
             isOwner: true,
             isSaved: false,
@@ -350,45 +355,113 @@ export default function StudentCourses() {
   };
 
   const handleSaveCourseProfile = async (e) => {
-    e.preventDefault();
+  e.preventDefault();
 
-    try {
-      const formData = new FormData();
+  try {
+    const formData = new FormData();
 
-      formData.append("name", courseProfileForm.name);
-      formData.append("about", courseProfileForm.about);
-      formData.append("instagram", courseProfileForm.instagram);
-      formData.append("linkedin", courseProfileForm.linkedin);
-      formData.append("telegram", courseProfileForm.telegram);
-      formData.append("customLink1Label", courseProfileForm.customLink1Label);
-      formData.append("customLink1Url", courseProfileForm.customLink1Url);
-      formData.append("customLink2Label", courseProfileForm.customLink2Label);
-      formData.append("customLink2Url", courseProfileForm.customLink2Url);
+    formData.append("name", courseProfileForm.name || "");
+    formData.append("about", courseProfileForm.about || "");
+    formData.append("instagram", courseProfileForm.instagram || "");
+    formData.append("linkedin", courseProfileForm.linkedin || "");
+    formData.append("telegram", courseProfileForm.telegram || "");
 
-      if (courseProfileForm.avatarFile) {
-        formData.append("avatar", courseProfileForm.avatarFile);
-      }
+    formData.append(
+      "customLink1Label",
+      courseProfileForm.customLink1Label || ""
+    );
 
-      if (courseProfileForm.backgroundImageFile) {
-        formData.append("backgroundImage", courseProfileForm.backgroundImageFile);
-      }
+    formData.append(
+      "customLink1Url",
+      courseProfileForm.customLink1Url || ""
+    );
 
-      await axios.put(`${API}/api/student/course-profile/me`, formData, {
-        withCredentials: true,
-        headers: {
-          "Content-Type": "multipart/form-data",
-        },
-      });
+    formData.append(
+      "customLink2Label",
+      courseProfileForm.customLink2Label || ""
+    );
 
-      alert("Course profile updated successfully");
-      setShowCourseProfileBox(false);
-      fetchMyCourseProfile();
-      fetchAllCourses();
-    } catch (err) {
-      console.error("Save course profile error:", err);
-      alert(err.response?.data?.message || "Failed to update course profile");
+    formData.append(
+      "customLink2Url",
+      courseProfileForm.customLink2Url || ""
+    );
+
+    // COURSE PROFILE AVATAR
+    if (courseProfileForm.avatarFile) {
+      formData.append("avatar", courseProfileForm.avatarFile);
     }
-  };
+
+    // COURSE PROFILE BACKGROUND
+    if (courseProfileForm.backgroundImageFile) {
+      formData.append(
+        "backgroundImage",
+        courseProfileForm.backgroundImageFile
+      );
+    }
+
+    const res = await axios.put(
+      `${API}/api/student/course-profile/me`,
+      formData,
+      {
+        withCredentials: true,
+      }
+    );
+
+    console.log(
+      "UPDATED COURSE PROFILE:",
+      res.data?.courseProfile
+    );
+
+    const updatedProfile = res.data?.courseProfile;
+
+    if (updatedProfile) {
+      setCourseProfileForm((prev) => ({
+        ...prev,
+
+        name: updatedProfile.name || "",
+        about: updatedProfile.about || "",
+        instagram: updatedProfile.instagram || "",
+        linkedin: updatedProfile.linkedin || "",
+        telegram: updatedProfile.telegram || "",
+
+        customLink1Label:
+          updatedProfile.customLink1Label || "",
+        customLink1Url:
+          updatedProfile.customLink1Url || "",
+
+        customLink2Label:
+          updatedProfile.customLink2Label || "",
+        customLink2Url:
+          updatedProfile.customLink2Url || "",
+
+        avatarFile: null,
+        backgroundImageFile: null,
+
+        avatarPreview: updatedProfile.avatar || "",
+        backgroundPreview:
+          updatedProfile.backgroundImage || "",
+      }));
+    }
+
+    setShowCourseProfileBox(false);
+
+    await fetchMyCourseProfile();
+    await fetchAllCourses();
+
+    alert("Course profile updated successfully");
+  } catch (err) {
+    console.error("Save course profile error:", err);
+    console.error("Server response:", err.response?.data);
+
+    alert(
+      err.response?.data?.message ||
+        "Failed to update course profile"
+    );
+  }
+};
+
+
+  
 
   const handleRemoveCourseAvatar = async () => {
     try {

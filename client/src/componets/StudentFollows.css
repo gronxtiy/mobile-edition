@@ -1,280 +1,301 @@
-.student-network-page {
-  width: 100%;
-  min-height: 100vh;
-  background: #f6f8fb;
-  padding: 24px;
-  box-sizing: border-box;
-}
-
-.student-network-card {
-  width: 100%;
-  max-width: 900px;
-  margin: 0 auto;
-  background: #fff;
-  border: 1px solid #e6e6e6;
-  border-radius: 16px;
-  overflow: hidden;
-}
-
-.student-network-tabs {
-  display: flex;
-  gap: 28px;
-  padding: 18px 22px 0;
-  border-bottom: 1px solid #ececec;
-}
-
-.student-network-tabs button {
-  background: none;
-  border: none;
-  outline: none;
-  padding: 0 2px 14px;
-  font-size: 17px;
-  font-weight: 600;
-  color: #666;
-  cursor: pointer;
-  border-bottom: 2px solid transparent;
-}
-
-.student-network-tabs button.active {
-  color: #0a7c66;
-  border-bottom-color: #0a7c66;
-}
-
-.student-network-top {
-  padding: 16px 22px;
-  border-bottom: 1px solid #f0f0f0;
-}
-
-.student-network-top p {
-  margin: 0 0 12px;
-  color: #666;
-  font-size: 15px;
-}
-
-.student-network-search {
-  width: 100%;
-  max-width: 320px;
-  border: 1px solid #dadada;
-  border-radius: 999px;
-  padding: 10px 16px;
-  font-size: 14px;
-  outline: none;
-}
-
-.student-network-list {
-  display: flex;
-  flex-direction: column;
-}
-
-.student-network-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 14px;
-  padding: 16px 22px;
-  border-bottom: 1px solid #f1f1f1;
-}
-
-.student-network-left {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-  min-width: 0;
-  flex: 1;
-  cursor: pointer;
-}
-
-.student-network-avatar {
-  width: 54px;
-  height: 54px;
-  border-radius: 50%;
-  object-fit: cover;
-  border: 1px solid #e5e5e5;
-  flex-shrink: 0;
-}
-
-.student-network-info {
-  min-width: 0;
-}
-
-.student-network-info h3 {
-  margin: 0 0 4px;
-  font-size: 16px;
-  font-weight: 700;
-  color: #222;
-}
-
-.student-network-info p {
-  margin: 0 0 4px;
-  font-size: 14px;
-  color: #444;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  max-width: 520px;
-}
-
-.student-network-info span {
-  font-size: 13px;
-  color: #777;
-}
-
-.student-network-actions {
-  flex-shrink: 0;
-}
-
-.student-network-btn {
-  min-width: 112px;
-  height: 42px;
-  border-radius: 999px;
-  border: 1px solid #666;
-  background: #fff;
-  color: #333;
-  font-size: 15px;
-  font-weight: 600;
-  cursor: pointer;
-}
-
-.student-network-btn.remove {
-  border-color: #d0d0d0;
-  color: #444;
-}
-
-.student-network-state {
-  padding: 28px 22px;
-  color: #777;
-  font-size: 15px;
-}
-
+/* =========================================================
+   STUDENT FOLLOWS / NETWORK
+   Modern responsive design
+   ========================================================= */
 
 .student-follows-page {
   width: 100%;
   min-height: 100vh;
-  padding: 24px;
-  background: #f7f8fa;
+  padding: 28px;
   box-sizing: border-box;
+  background:
+    radial-gradient(circle at top left, rgba(11, 122, 105, 0.06), transparent 30%),
+    linear-gradient(180deg, #f8fafb 0%, #f3f6f7 100%);
 }
+
+
+/* =========================================================
+   MAIN CARD
+   ========================================================= */
 
 .student-follows-card {
   width: 100%;
-  max-width: 920px;
+  max-width: 980px;
   margin: 0 auto;
   background: #ffffff;
-  border: 1px solid #e7e7e7;
-  border-radius: 18px;
+  border: 1px solid #e7eceb;
+  border-radius: 24px;
   overflow: hidden;
+  box-shadow:
+    0 10px 35px rgba(20, 40, 36, 0.06),
+    0 2px 8px rgba(20, 40, 36, 0.03);
 }
+
+
+/* =========================================================
+   TABS
+   ========================================================= */
 
 .student-follows-tabs {
   display: flex;
   align-items: center;
-  gap: 26px;
-  padding: 18px 22px 0;
-  border-bottom: 1px solid #ececec;
+  gap: 8px;
+  padding: 18px 22px;
+  background: #ffffff;
+  border-bottom: 1px solid #edf1f0;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.student-follows-tabs::-webkit-scrollbar {
+  display: none;
 }
 
 .student-follows-tabs button {
-  border: none;
-  background: transparent;
-  cursor: pointer;
-  font-size: 16px;
-  font-weight: 600;
-  color: #666;
-  padding: 0 0 14px;
-  border-bottom: 2px solid transparent;
-  display: flex;
+  position: relative;
+  display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: 8px;
+
+  min-height: 42px;
+  padding: 0 16px;
+
+  border: 1px solid transparent;
+  border-radius: 12px;
+
+  background: transparent;
+  color: #707978;
+
+  font-size: 14px;
+  font-weight: 650;
+
+  white-space: nowrap;
+  cursor: pointer;
+
+  transition:
+    background 0.2s ease,
+    color 0.2s ease,
+    border-color 0.2s ease,
+    transform 0.2s ease;
 }
 
-.student-follows-tabs button span {
-  font-size: 13px;
-  font-weight: 700;
-  color: #0b7a69;
-  background: #eaf8f4;
-  padding: 2px 8px;
-  border-radius: 999px;
+.student-follows-tabs button:hover {
+  background: #f4f8f7;
+  color: #176f61;
 }
 
 .student-follows-tabs button.active {
-  color: #0b7a69;
-  border-bottom-color: #0b7a69;
+  background: #eaf7f4;
+  border-color: #cfeae4;
+  color: #087763;
 }
+
+.student-follows-tabs button span {
+  min-width: 24px;
+  height: 24px;
+  padding: 0 7px;
+
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  border-radius: 999px;
+
+  background: #eef2f1;
+  color: #68716f;
+
+  font-size: 12px;
+  font-weight: 750;
+}
+
+.student-follows-tabs button.active span {
+  background: #0b7a69;
+  color: #ffffff;
+}
+
+
+/* =========================================================
+   TOP BAR
+   ========================================================= */
 
 .student-follows-topbar {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 16px;
-  padding: 16px 22px;
-  border-bottom: 1px solid #f1f1f1;
-  flex-wrap: wrap;
+
+  gap: 20px;
+  padding: 20px 24px;
+
+  background: linear-gradient(
+    180deg,
+    #ffffff 0%,
+    #fbfcfc 100%
+  );
+
+  border-bottom: 1px solid #edf1f0;
 }
 
 .student-follows-topbar p {
   margin: 0;
-  font-size: 15px;
-  color: #666;
+
+  color: #4f5957;
+
+  font-size: 14px;
+  font-weight: 550;
 }
 
+
+/* =========================================================
+   SEARCH
+   ========================================================= */
+
 .student-follows-searchbox {
+  width: 290px;
+  height: 42px;
+
   display: flex;
   align-items: center;
-  gap: 8px;
-  min-width: 260px;
-  max-width: 320px;
-  width: 100%;
-  border: 1px solid #dddddd;
-  border-radius: 999px;
-  padding: 10px 14px;
-  background: #fff;
+  gap: 9px;
+
+  padding: 0 14px;
+
+  box-sizing: border-box;
+
+  background: #f7f9f9;
+
+  border: 1px solid #e2e8e6;
+  border-radius: 12px;
+
+  color: #7b8582;
+
+  transition:
+    border-color 0.2s ease,
+    background 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.student-follows-searchbox:focus-within {
+  background: #ffffff;
+  border-color: #63aa9d;
+  box-shadow: 0 0 0 4px rgba(11, 122, 105, 0.08);
 }
 
 .student-follows-searchbox input {
-  flex: 1;
+  width: 100%;
+
   border: none;
   outline: none;
+
   background: transparent;
+
+  color: #202725;
+
   font-size: 14px;
 }
 
-.student-follows-state {
-  padding: 30px 22px;
-  font-size: 15px;
-  color: #777;
+.student-follows-searchbox input::placeholder {
+  color: #9aa3a1;
 }
+
+
+/* =========================================================
+   LIST
+   ========================================================= */
 
 .student-follows-list {
   display: flex;
   flex-direction: column;
 }
 
+
+/* =========================================================
+   USER ROW
+   ========================================================= */
+
 .student-follow-row {
+  position: relative;
+
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 14px;
-  padding: 16px 22px;
-  border-bottom: 1px solid #f1f1f1;
+
+  gap: 20px;
+
+  padding: 18px 24px;
+
+  border-bottom: 1px solid #f0f2f2;
+
+  transition:
+    background 0.2s ease,
+    transform 0.2s ease;
 }
+
+.student-follow-row:last-child {
+  border-bottom: none;
+}
+
+.student-follow-row:hover {
+  background: #fbfdfc;
+}
+
+
+/* =========================================================
+   LEFT USER SECTION
+   ========================================================= */
 
 .student-follow-left {
   display: flex;
   align-items: center;
+
   gap: 14px;
-  flex: 1;
+
   min-width: 0;
+  flex: 1;
+
   cursor: pointer;
 }
 
+
+/* =========================================================
+   AVATAR
+   ========================================================= */
+
 .student-follow-avatar {
-  width: 56px;
-  height: 56px;
-  border-radius: 50%;
-  object-fit: cover;
+  width: 58px;
+  height: 58px;
+
   flex-shrink: 0;
-  border: 1px solid #e5e5e5;
+
+  object-fit: cover;
+
+  border-radius: 50%;
+
+  border: 2px solid #ffffff;
+
+  box-shadow:
+    0 0 0 1px #dce5e2,
+    0 5px 14px rgba(20, 50, 45, 0.08);
+
+  background: #f1f4f3;
+
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
 }
+
+.student-follow-left:hover .student-follow-avatar {
+  transform: scale(1.04);
+
+  box-shadow:
+    0 0 0 2px #b9ddd5,
+    0 6px 16px rgba(20, 50, 45, 0.1);
+}
+
+
+/* =========================================================
+   USER INFORMATION
+   ========================================================= */
 
 .student-follow-info {
   min-width: 0;
@@ -282,102 +303,582 @@
 }
 
 .student-follow-info h3 {
-  margin: 0 0 4px;
+  margin: 0 0 5px;
+
+  color: #1d2523;
+
   font-size: 16px;
-  font-weight: 700;
-  color: #1f1f1f;
+  font-weight: 750;
+
+  line-height: 1.2;
+
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .student-follow-info p {
-  margin: 0 0 4px;
-  font-size: 14px;
-  color: #444;
-  white-space: nowrap;
+  margin: 0 0 5px;
+
+  color: #59625f;
+
+  font-size: 13.5px;
+  font-weight: 450;
+
+  line-height: 1.4;
+
+  max-width: 580px;
+
   overflow: hidden;
   text-overflow: ellipsis;
-  max-width: 540px;
+  white-space: nowrap;
 }
 
 .student-follow-info span {
-  font-size: 13px;
-  color: #7b7b7b;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+
+  color: #8a9491;
+
+  font-size: 12.5px;
 }
+
+
+/* =========================================================
+   ACTION AREA
+   ========================================================= */
 
 .student-follow-actions {
   display: flex;
   align-items: center;
-  gap: 10px;
+  justify-content: flex-end;
+
+  gap: 9px;
+
   flex-shrink: 0;
 }
+
+
+/* =========================================================
+   COMMON BUTTON
+   ========================================================= */
 
 .student-follow-accept-btn,
 .student-follow-reject-btn,
 .student-follow-remove-btn,
 .student-follow-following-btn {
-  height: 42px;
-  min-width: 106px;
-  border-radius: 999px;
-  border: 1px solid #cfcfcf;
-  background: #fff;
-  font-size: 14px;
-  font-weight: 600;
-  cursor: pointer;
-  padding: 0 18px;
-  display: flex;
+  min-width: 104px;
+  height: 40px;
+
+  display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 6px;
+
+  padding: 0 16px;
+
+  border-radius: 10px;
+
+  font-size: 13px;
+  font-weight: 650;
+
+  cursor: pointer;
+
+  transition:
+    background 0.2s ease,
+    border-color 0.2s ease,
+    color 0.2s ease,
+    transform 0.15s ease,
+    box-shadow 0.2s ease;
 }
+
+.student-follow-accept-btn:hover,
+.student-follow-reject-btn:hover,
+.student-follow-remove-btn:hover,
+.student-follow-following-btn:hover {
+  transform: translateY(-1px);
+}
+
+.student-follow-accept-btn:active,
+.student-follow-reject-btn:active,
+.student-follow-remove-btn:active,
+.student-follow-following-btn:active {
+  transform: translateY(0);
+}
+
+
+/* =========================================================
+   ACCEPT
+   ========================================================= */
 
 .student-follow-accept-btn {
+  border: 1px solid #0b7a69;
+
   background: #0b7a69;
-  color: #fff;
-  border-color: #0b7a69;
+  color: #ffffff;
+
+  box-shadow: 0 5px 14px rgba(11, 122, 105, 0.16);
 }
+
+.student-follow-accept-btn:hover {
+  background: #096b5c;
+  border-color: #096b5c;
+  box-shadow: 0 7px 18px rgba(11, 122, 105, 0.22);
+}
+
+
+/* =========================================================
+   REJECT
+   ========================================================= */
 
 .student-follow-reject-btn {
-  color: #444;
+  border: 1px solid #e0e4e3;
+
+  background: #ffffff;
+  color: #5d6664;
 }
+
+.student-follow-reject-btn:hover {
+  background: #faf5f5;
+  border-color: #e4caca;
+  color: #a04f4f;
+}
+
+
+/* =========================================================
+   REMOVE
+   ========================================================= */
 
 .student-follow-remove-btn {
-  color: #444;
+  border: 1px solid #dfe5e3;
+
+  background: #ffffff;
+  color: #4f5957;
 }
 
-.student-follow-following-btn {
-  color: #444;
+.student-follow-remove-btn:hover {
+  background: #faf5f5;
+  border-color: #e2cccc;
+  color: #a04f4f;
 }
+
+
+/* =========================================================
+   FOLLOWING
+   ========================================================= */
+
+.student-follow-following-btn {
+  border: 1px solid #cfe4df;
+
+  background: #f2faf8;
+  color: #126d60;
+}
+
+.student-follow-following-btn:hover {
+  background: #e8f6f2;
+  border-color: #acd4ca;
+}
+
+
+/* =========================================================
+   DISABLED
+   ========================================================= */
 
 .student-follow-accept-btn:disabled,
 .student-follow-reject-btn:disabled,
 .student-follow-remove-btn:disabled,
 .student-follow-following-btn:disabled {
-  opacity: 0.7;
+  opacity: 0.55;
+
   cursor: not-allowed;
+
+  transform: none;
+  box-shadow: none;
 }
 
-@media (max-width: 768px) {
+
+/* =========================================================
+   LOADING / EMPTY STATE
+   ========================================================= */
+
+.student-follows-state {
+  min-height: 220px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  padding: 30px 24px;
+  box-sizing: border-box;
+
+  color: #89928f;
+
+  font-size: 14px;
+  font-weight: 500;
+
+  text-align: center;
+
+  background: #ffffff;
+}
+
+
+/* =========================================================
+   TABLET
+   ========================================================= */
+
+@media (max-width: 900px) {
+
   .student-follows-page {
-    padding: 14px;
+    padding: 20px;
   }
 
+  .student-follows-card {
+    max-width: 100%;
+  }
+
+  .student-follow-info p {
+    max-width: 420px;
+  }
+
+}
+
+
+/* =========================================================
+   MOBILE
+   ========================================================= */
+
+@media (max-width: 768px) {
+
+  .student-follows-page {
+    min-height: 100vh;
+
+    padding: 0;
+
+    background: #f6f8f8;
+  }
+
+  .student-follows-card {
+    width: 100%;
+
+    min-height: 100vh;
+
+    border: none;
+    border-radius: 0;
+
+    box-shadow: none;
+
+    overflow: visible;
+  }
+
+
+  /* ---------- MOBILE TABS ---------- */
+
   .student-follows-tabs {
-    gap: 14px;
+    position: sticky;
+    top: 0;
+    z-index: 20;
+
+    gap: 6px;
+
+    padding: 12px;
+
+    background: rgba(255, 255, 255, 0.96);
+
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+
+    border-bottom: 1px solid #e8edeb;
+
     overflow-x: auto;
   }
 
-  .student-follow-row {
-    align-items: flex-start;
-    flex-direction: column;
+  .student-follows-tabs button {
+    min-height: 40px;
+
+    padding: 0 13px;
+
+    border-radius: 10px;
+
+    font-size: 13px;
   }
 
-  .student-follow-actions {
+  .student-follows-tabs button span {
+    min-width: 22px;
+    height: 22px;
+
+    font-size: 11px;
+  }
+
+
+  /* ---------- MOBILE TOP BAR ---------- */
+
+  .student-follows-topbar {
+    position: sticky;
+    top: 65px;
+    z-index: 15;
+
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+
+    gap: 12px;
+
+    padding: 14px 14px 15px;
+
+    background: rgba(255, 255, 255, 0.97);
+
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+  }
+
+  .student-follows-topbar p {
+    font-size: 13px;
+  }
+
+
+  /* ---------- MOBILE SEARCH ---------- */
+
+  .student-follows-searchbox {
     width: 100%;
-    justify-content: flex-start;
-    margin-left: 70px;
+    height: 44px;
+
+    border-radius: 12px;
+  }
+
+
+  /* ---------- MOBILE LIST ---------- */
+
+  .student-follow-row {
+    align-items: center;
+
+    gap: 12px;
+
+    padding: 15px 14px;
+
+    background: #ffffff;
+  }
+
+  .student-follow-row:hover {
+    background: #ffffff;
+  }
+
+
+  /* ---------- MOBILE USER ---------- */
+
+  .student-follow-left {
+    gap: 11px;
+
+    min-width: 0;
+  }
+
+  .student-follow-avatar {
+    width: 52px;
+    height: 52px;
+  }
+
+  .student-follow-info h3 {
+    margin-bottom: 4px;
+
+    font-size: 15px;
   }
 
   .student-follow-info p {
     max-width: 100%;
-    white-space: normal;
+
+    margin-bottom: 4px;
+
+    font-size: 12.5px;
+
+    white-space: nowrap;
   }
+
+  .student-follow-info span {
+    font-size: 11.5px;
+  }
+
+
+  /* ---------- MOBILE ACTIONS ---------- */
+
+  .student-follow-actions {
+    gap: 6px;
+  }
+
+  .student-follow-accept-btn,
+  .student-follow-reject-btn,
+  .student-follow-remove-btn,
+  .student-follow-following-btn {
+    min-width: 0;
+
+    width: auto;
+    height: 38px;
+
+    padding: 0 11px;
+
+    border-radius: 10px;
+
+    font-size: 12px;
+  }
+
+
+  /* ---------- MOBILE REQUEST BUTTONS ---------- */
+
+  .student-follow-accept-btn svg,
+  .student-follow-reject-btn svg {
+    width: 14px;
+    height: 14px;
+  }
+
+
+  /* ---------- EMPTY ---------- */
+
+  .student-follows-state {
+    min-height: 260px;
+
+    padding: 30px 20px;
+
+    font-size: 13px;
+  }
+}
+
+
+/* =========================================================
+   SMALL MOBILE
+   ========================================================= */
+
+@media (max-width: 480px) {
+
+  .student-follows-tabs {
+    padding: 10px;
+  }
+
+  .student-follows-tabs button {
+    padding: 0 11px;
+
+    font-size: 12px;
+  }
+
+  .student-follows-tabs button span {
+    min-width: 20px;
+    height: 20px;
+
+    padding: 0 6px;
+
+    font-size: 10px;
+  }
+
+
+  .student-follows-topbar {
+    top: 60px;
+
+    padding: 12px;
+  }
+
+  .student-follows-topbar p {
+    font-size: 12px;
+  }
+
+
+  .student-follow-row {
+    align-items: flex-start;
+
+    padding: 14px 12px;
+  }
+
+  .student-follow-avatar {
+    width: 48px;
+    height: 48px;
+  }
+
+
+  .student-follow-info h3 {
+    font-size: 14px;
+  }
+
+  .student-follow-info p {
+    font-size: 12px;
+  }
+
+  .student-follow-info span {
+    font-size: 11px;
+  }
+
+
+  .student-follow-actions {
+    flex-direction: column;
+
+    align-items: stretch;
+  }
+
+  .student-follow-accept-btn,
+  .student-follow-reject-btn,
+  .student-follow-remove-btn,
+  .student-follow-following-btn {
+    width: 82px;
+
+    height: 34px;
+
+    padding: 0 8px;
+
+    font-size: 11px;
+  }
+}
+
+
+/* =========================================================
+   VERY SMALL DEVICES
+   ========================================================= */
+
+@media (max-width: 360px) {
+
+  .student-follow-row {
+    gap: 8px;
+  }
+
+  .student-follow-avatar {
+    width: 44px;
+    height: 44px;
+  }
+
+  .student-follow-left {
+    gap: 8px;
+  }
+
+  .student-follow-info h3 {
+    font-size: 13px;
+  }
+
+  .student-follow-info p {
+    font-size: 11px;
+  }
+
+  .student-follow-info span {
+    display: none;
+  }
+
+  .student-follow-accept-btn,
+  .student-follow-reject-btn,
+  .student-follow-remove-btn,
+  .student-follow-following-btn {
+    width: 72px;
+
+    height: 32px;
+
+    font-size: 10px;
+  }
+}
+
+
+/* =========================================================
+   ACCESSIBILITY
+   ========================================================= */
+
+.student-follows-tabs button:focus-visible,
+.student-follows-searchbox:focus-within,
+.student-follow-accept-btn:focus-visible,
+.student-follow-reject-btn:focus-visible,
+.student-follow-remove-btn:focus-visible,
+.student-follow-following-btn:focus-visible {
+  outline: 3px solid rgba(11, 122, 105, 0.18);
+  outline-offset: 2px;
 }
