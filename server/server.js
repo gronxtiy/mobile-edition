@@ -7,13 +7,16 @@ const cors = require("cors");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 const cookieParser = require("cookie-parser");
-const nodemailer = require("nodemailer");
+//const nodemailer = require("nodemailer");
 const path = require("path");
 const cloudinary = require("./config/cloudinary");
 
 const upload = require("./middleware/upload");
 const cloudinaryTestRoute = require("./routes/cloudinaryTest");
 const uploadToCloudinary = require("./utils/uploadToCloudinary");
+const { Resend } = require("resend");
+const resend = new Resend(process.env.RESEND_API_KEY);
+
 
 // Hybrid job-recommendation engine (BGE-small semantic + BM25 lexical fusion).
 // Modular code lives under ./recommender — see recommender/README.md.
@@ -100,6 +103,23 @@ app.use("/api/cloudinary", cloudinaryTestRoute);
 
 
 
+const sendEmail = async ({ to, subject, html }) => {
+  const { data, error } = await resend.emails.send({
+    from: "Gronxtiy <onboarding@resend.dev>",
+    to: [to],
+    subject,
+    html,
+  });
+
+  if (error) {
+    console.error("❌ Resend Error:", error);
+    throw new Error(error.message || "Failed to send email");
+  }
+
+  console.log("✅ Email sent:", data?.id);
+
+  return data;
+};
 
 
 
@@ -426,68 +446,102 @@ app.get("/", (req, res) => {
 
 
 
-
 // ================= REGISTER =================
 app.post("/register", async (req, res) => {
   try {
     const { name, email, password, confirmPassword } = req.body;
 
-    if (!name || !email || !password || !confirmPassword)
-      return res.status(400).json({ message: "All fields required" });
-
-    if (password !== confirmPassword)
-      return res.status(400).json({ message: "Passwords do not match" });
-
-    const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*[^A-Za-z0-9]).{8,}$/;
-
-    if (!passwordRegex.test(password))
+    // ================= VALIDATION =================
+    if (!name || !email || !password || !confirmPassword) {
       return res.status(400).json({
-        message: "Password must contain uppercase, lowercase & special character"
+        message: "All fields required",
       });
-
-
-        const recruiterExists = await Recruiter.findOne({ email });
-    if (recruiterExists) {
-      return res.status(400).json({ message: "This email already exists as recruiter" });
     }
 
+    if (password !== confirmPassword) {
+      return res.status(400).json({
+        message: "Passwords do not match",
+      });
+    }
 
-    const exists = await UserModel.findOne({ email });
-    if (exists)
-      return res.status(400).json({ message: "User already exists" });
+    const passwordRegex =
+      /^(?=.*[a-z])(?=.*[A-Z])(?=.*[^A-Za-z0-9]).{8,}$/;
 
+    if (!passwordRegex.test(password)) {
+      return res.status(400).json({
+        message:
+          "Password must contain uppercase, lowercase & special character",
+      });
+    }
+
+    // Normalize email
+    const normalizedEmail = email.trim().toLowerCase();
+
+    // ================= CHECK RECRUITER =================
+    const recruiterExists = await Recruiter.findOne({
+      email: normalizedEmail,
+    });
+
+    if (recruiterExists) {
+      return res.status(400).json({
+        message: "This email already exists as recruiter",
+      });
+    }
+
+    // ================= CHECK USER =================
+    const exists = await UserModel.findOne({
+      email: normalizedEmail,
+    });
+
+    if (exists) {
+      return res.status(400).json({
+        message: "User already exists",
+      });
+    }
+
+    // ================= HASH PASSWORD =================
     const hash = await bcrypt.hash(password, 10);
 
-    // ✅ Generate OTP
-    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    // ================= GENERATE OTP =================
+    const otp = Math.floor(
+      100000 + Math.random() * 900000
+    ).toString();
 
+    // ================= CREATE STUDENT =================
     await UserModel.create({
       name,
-      email,
+      email: normalizedEmail,
       password: hash,
       role: "student",
+      isVerified: false,
       otp,
-      otpExpiry: Date.now() + 60 * 1000 // 60 seconds
+      otpExpiry: Date.now() + 5 * 60 * 1000, // 5 minutes
     });
 
-    // ✅ Send OTP Email
-    await transporter.sendMail({
-      from: "bgopalakrishna745@gmail.com",
-      to: email,
-      subject: "Your OTP for Student Registration",
-      html: `
-        <h2>Your OTP Code</h2>
-        <h1>${otp}</h1>
-        <p>This OTP is valid for 60 seconds.</p>
-      `,
-    });
+    // ================= SEND OTP USING RESEND =================
+    await sendOTPEmail(normalizedEmail, otp);
 
-    res.json({ message: "OTP sent successfully" });
+    return res.json({
+      message: "OTP sent successfully",
+    });
 
   } catch (err) {
-    res.status(500).json({ message: err.message });
+    console.error("❌ Register Error:", err);
+
+    return res.status(500).json({
+      message: "Registration failed",
+      error: err.message,
+    });
   }
 });
+
+
+
+
+
+
+
+
 
 
 
@@ -500,16 +554,30 @@ app.post("/api/student/verify-otp", async (req, res) => {
   try {
     const { email, otp } = req.body;
 
-    const user = await UserModel.findOne({ email });
+    const normalizedEmail = email?.trim().toLowerCase();
 
-    if (!user)
-      return res.status(400).json({ message: "Student not found" });
+    const user = await UserModel.findOne({
+      email: normalizedEmail,
+      role: "student",
+    });
 
-    if (user.otp !== otp)
-      return res.status(400).json({ message: "Invalid OTP" });
+    if (!user) {
+      return res.status(400).json({
+        message: "Student not found",
+      });
+    }
 
-    if (user.otpExpiry < Date.now())
-      return res.status(400).json({ message: "OTP expired" });
+    if (user.otp !== otp) {
+      return res.status(400).json({
+        message: "Invalid OTP",
+      });
+    }
+
+    if (!user.otpExpiry || user.otpExpiry < Date.now()) {
+      return res.status(400).json({
+        message: "OTP expired",
+      });
+    }
 
     user.isVerified = true;
     user.otp = null;
@@ -517,19 +585,35 @@ app.post("/api/student/verify-otp", async (req, res) => {
 
     await user.save();
 
-    res.json({ message: "Student Registered Successfully ✅" });
+    return res.json({
+      message: "Student Registered Successfully ✅",
+    });
 
   } catch (err) {
-    res.status(500).json({ message: err.message });
+    console.error("❌ Verify OTP Error:", err);
+
+    return res.status(500).json({
+      message: err.message,
+    });
   }
 });
+
+
 
 app.post("/api/student/resend-otp", async (req, res) => {
   try {
     const { email } = req.body;
 
+    const normalizedEmail = email?.trim().toLowerCase();
+
+    if (!normalizedEmail) {
+      return res.status(400).json({
+        message: "Email is required",
+      });
+    }
+
     const user = await UserModel.findOne({
-      email: email.trim().toLowerCase(),
+      email: normalizedEmail,
       role: "student",
     });
 
@@ -550,159 +634,230 @@ app.post("/api/student/resend-otp", async (req, res) => {
 
     await user.save();
 
-    await transporter.sendMail({
-      from: "bgopalakrishna745@gmail.com",
-      to: user.email,
-      subject: "Your Gronxtiy Verification OTP",
-      html: `
-        <div style="font-family: Arial, sans-serif;">
-          <h2>Gronxtiy Email Verification</h2>
-
-          <p>Your new OTP is:</p>
-
-          <h1 style="letter-spacing: 8px;">
-            ${otp}
-          </h1>
-
-          <p>This OTP is valid for <strong>5 minutes</strong>.</p>
-
-          <p>If you did not request this OTP, please ignore this email.</p>
-        </div>
-      `,
-    });
+    // Send using Resend
+    await sendOTPEmail(user.email, otp);
 
     return res.json({
       message: "OTP resent successfully",
     });
 
   } catch (err) {
-    console.error("Resend OTP Error:", err);
+    console.error("❌ Resend OTP Error:", err);
 
     return res.status(500).json({
       message: "Failed to resend OTP",
+      error: err.message,
     });
   }
 });
-
 
 
 
 
 
 // ================= EMAIL TRANSPORTER =================
+const sendOTPEmail = async (email, otp) => {
+  const { data, error } = await resend.emails.send({
+    from: "Gronxtiy <onboarding@resend.dev>",
+    to: [email],
+    subject: "Your Gronxtiy Verification OTP",
 
-const transporter = nodemailer.createTransport({
-  host: "smtp.gmail.com",
+    html: `
+      <div style="
+        font-family: Arial, sans-serif;
+        max-width: 600px;
+        margin: auto;
+        padding: 30px;
+        border: 1px solid #e5e7eb;
+        border-radius: 12px;
+      ">
 
-  port: 465,
+        <h2>Gronxtiy Email Verification</h2>
 
-  secure: true,
+        <p>Your verification OTP is:</p>
 
-  auth: {
-    user: process.env.MAIL_USER,
-    pass: process.env.MAIL_PASS,
-  },
+        <h1 style="
+          letter-spacing: 10px;
+          font-size: 36px;
+        ">
+          ${otp}
+        </h1>
 
-  tls: {
-    rejectUnauthorized: true,
-  },
+        <p>
+          This OTP is valid for
+          <strong>5 minutes</strong>.
+        </p>
 
-  connectionTimeout: 15000,
-  greetingTimeout: 15000,
-  socketTimeout: 20000,
-});
+        <p>
+          If you did not request this OTP,
+          please ignore this email.
+        </p>
 
-// ================= TEST SMTP CONNECTION =================
+      </div>
+    `,
+  });
 
-transporter.verify((error, success) => {
   if (error) {
-    console.error("❌ SMTP Transporter Error:", error);
-  } else {
-    console.log("✅ SMTP Server ready to send email");
+    console.error("❌ Resend Error:", error);
+    throw new Error(error.message || "Failed to send OTP email");
   }
-});
+
+  console.log("✅ OTP email sent successfully:", data?.id);
+
+  return data;
+};
 
 
 
-
-
-// 🔥 ADD THIS EXACTLY HERE
-transporter.verify((error, success) => {
-  if (error) {
-    console.log("Transporter Error:", error);
-  } else {
-    console.log("Server ready to send email");
-  }
-});
 // =====================================================
 // ================= REGISTER + SEND OTP ===============
+// =====================================================
+
+// =====================================================
+// ================= RECRUITER REGISTER =================
 // =====================================================
 
 app.post("/api/recruiter/register", async (req, res) => {
   try {
     const { name, email, company, password } = req.body;
 
-    if (!name || !email || !company || !password)
-      return res.status(400).json({ message: "All fields required" });
-
-    const studentExists = await UserModel.findOne({ email });
-    if (studentExists) {
-      return res.status(400).json({ message: "This email already exists as student" });
+    if (!name || !email || !company || !password) {
+      return res.status(400).json({
+        message: "All fields required",
+      });
     }
 
-    const existing = await Recruiter.findOne({ email });
-    if (existing)
-      return res.status(400).json({ message: "Email already registered" });
+    const normalizedEmail = email.trim().toLowerCase();
+
+    // Check student
+    const studentExists = await UserModel.findOne({
+      email: normalizedEmail,
+    });
+
+    if (studentExists) {
+      return res.status(400).json({
+        message: "This email already exists as student",
+      });
+    }
+
+    // Check recruiter
+    const existing = await Recruiter.findOne({
+      email: normalizedEmail,
+    });
+
+    if (existing) {
+      return res.status(400).json({
+        message: "Email already registered",
+      });
+    }
 
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    // Generate 6 digit OTP
-    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    // Generate OTP
+    const otp = Math.floor(
+      100000 + Math.random() * 900000
+    ).toString();
 
     await Recruiter.create({
       name,
-      email,
+      email: normalizedEmail,
       company,
       password: hashedPassword,
+      isVerified: false,
       otp,
-      otpExpiry: Date.now() + 60 * 1000, // 60 seconds
+      otpExpiry: Date.now() + 5 * 60 * 1000,
     });
 
-    // Send OTP Email
-    await transporter.sendMail({
-      from: "bgopalakrishna745@gmail.com",
-      to: email,
+    // Send OTP using Resend
+    await sendEmail({
+      to: normalizedEmail,
       subject: "Your OTP for Recruiter Registration",
       html: `
-        <h2>Your OTP Code</h2>
-        <h1>${otp}</h1>
-        <p>This OTP is valid for 60 seconds.</p>
+        <div style="
+          font-family: Arial, sans-serif;
+          max-width: 600px;
+          margin: auto;
+          padding: 30px;
+          border: 1px solid #e5e7eb;
+          border-radius: 12px;
+        ">
+
+          <h2>Gronxtiy Recruiter Verification</h2>
+
+          <p>Your verification OTP is:</p>
+
+          <h1 style="
+            font-size: 36px;
+            letter-spacing: 10px;
+          ">
+            ${otp}
+          </h1>
+
+          <p>
+            This OTP is valid for
+            <strong>5 minutes</strong>.
+          </p>
+
+          <p>
+            If you did not request this OTP,
+            please ignore this email.
+          </p>
+
+        </div>
       `,
     });
 
-    res.json({ message: "OTP sent successfully" });
+    return res.json({
+      message: "OTP sent successfully",
+    });
 
   } catch (err) {
-    res.status(500).json({ message: err.message });
+    console.error("❌ Recruiter Register Error:", err);
+
+    return res.status(500).json({
+      message: "Registration failed",
+      error: err.message,
+    });
   }
 });
 
+
+
+
 // ================= VERIFY OTP ========================
+
+// ================= RECRUITER VERIFY OTP =================
 
 app.post("/api/recruiter/verify-otp", async (req, res) => {
   try {
     const { email, otp } = req.body;
 
-    const recruiter = await Recruiter.findOne({ email});
+    const normalizedEmail = email?.trim().toLowerCase();
 
-    if (!recruiter)
-      return res.status(400).json({ message: "Recruiter not found" });
+    const recruiter = await Recruiter.findOne({
+      email: normalizedEmail,
+    });
 
-    if (recruiter.otp !== otp)
-      return res.status(400).json({ message: "Invalid OTP" });
+    if (!recruiter) {
+      return res.status(400).json({
+        message: "Recruiter not found",
+      });
+    }
 
-    if (recruiter.otpExpiry < Date.now())
-      return res.status(400).json({ message: "OTP expired" });
+    if (recruiter.otp !== otp) {
+      return res.status(400).json({
+        message: "Invalid OTP",
+      });
+    }
+
+    if (
+      !recruiter.otpExpiry ||
+      recruiter.otpExpiry < Date.now()
+    ) {
+      return res.status(400).json({
+        message: "OTP expired",
+      });
+    }
 
     recruiter.isVerified = true;
     recruiter.otp = null;
@@ -710,42 +865,94 @@ app.post("/api/recruiter/verify-otp", async (req, res) => {
 
     await recruiter.save();
 
-    res.json({ message: "Recruiter Registered Successfully ✅" });
+    return res.json({
+      message: "Recruiter Registered Successfully ✅",
+    });
 
   } catch (err) {
-    res.status(500).json({ message: err.message });
+    console.error("❌ Recruiter Verify Error:", err);
+
+    return res.status(500).json({
+      message: err.message,
+    });
   }
 });
+
+
+
+// ================= RECRUITER RESEND OTP =================
 
 app.post("/api/recruiter/resend-otp", async (req, res) => {
   try {
     const { email } = req.body;
 
-    const recruiter = await Recruiter.findOne({ email });
+    const normalizedEmail = email?.trim().toLowerCase();
 
-    if (!recruiter)
-      return res.status(400).json({ message: "Recruiter not found" });
-
-    const otp = Math.floor(100000 + Math.random() * 900000).toString();
-
-    recruiter.otp = otp;
-    recruiter.otpExpiry = Date.now() + 60 * 1000;
-    await recruiter.save();
-
-    await transporter.sendMail({
-      from: "bgopalakrishna745@gmail.com",
-      to: email,
-      subject: "Resent OTP",
-      html: `<h1>${otp}</h1><p>Valid for 60 seconds</p>`,
+    const recruiter = await Recruiter.findOne({
+      email: normalizedEmail,
     });
 
-    res.json({ message: "OTP Resent Successfully" });
+    if (!recruiter) {
+      return res.status(400).json({
+        message: "Recruiter not found",
+      });
+    }
+
+    const otp = Math.floor(
+      100000 + Math.random() * 900000
+    ).toString();
+
+    recruiter.otp = otp;
+    recruiter.otpExpiry = Date.now() + 5 * 60 * 1000;
+
+    await recruiter.save();
+
+    await sendEmail({
+      to: normalizedEmail,
+      subject: "Your New Gronxtiy Recruiter OTP",
+      html: `
+        <div style="
+          font-family: Arial, sans-serif;
+          max-width: 600px;
+          margin: auto;
+          padding: 30px;
+          border: 1px solid #e5e7eb;
+          border-radius: 12px;
+        ">
+
+          <h2>Gronxtiy Recruiter Verification</h2>
+
+          <p>Your new OTP is:</p>
+
+          <h1 style="
+            font-size: 36px;
+            letter-spacing: 10px;
+          ">
+            ${otp}
+          </h1>
+
+          <p>
+            This OTP is valid for
+            <strong>5 minutes</strong>.
+          </p>
+
+        </div>
+      `,
+    });
+
+    return res.json({
+      message: "OTP Resent Successfully",
+    });
 
   } catch (err) {
-    res.status(500).json({ message: err.message });
+    console.error("❌ Recruiter Resend OTP Error:", err);
+
+    return res.status(500).json({
+      message: "Failed to resend OTP",
+      error: err.message,
+    });
   }
 });
-
 
 
 // ================= LOGIN =================
@@ -817,63 +1024,133 @@ res.cookie("userToken", token, {
 
 
 
+// ================= FORGOT PASSWORD =================
+
 app.post("/forgotpassword", async (req, res) => {
   const { email } = req.body;
 
   try {
-    const user = await UserModel.findOne({ email });
-    if (!user) return res.json({ Status: "User not found" });
+    const normalizedEmail = email?.trim().toLowerCase();
+
+    if (!normalizedEmail) {
+      return res.json({
+        Status: "Email required",
+      });
+    }
+
+    // Check student
+    let user = await UserModel.findOne({
+      email: normalizedEmail,
+    });
+
+    let accountType = "student";
+
+    // If not student, check recruiter
+    if (!user) {
+      user = await Recruiter.findOne({
+        email: normalizedEmail,
+      });
+
+      accountType = "recruiter";
+    }
+
+    if (!user) {
+      return res.json({
+        Status: "User not found",
+      });
+    }
 
     const token = jwt.sign(
-      { id: user._id },
+      {
+        id: user._id,
+        role: accountType,
+      },
       process.env.RESET_SECRET || "mysecret123",
-      { expiresIn: "15m" }
+      {
+        expiresIn: "15m",
+      }
     );
 
     user.resetToken = token;
-    user.resetTokenExpiry = Date.now() + 15 * 60 * 1000;
+    user.resetTokenExpiry =
+      Date.now() + 15 * 60 * 1000;
+
     await user.save();
-const resetLink =
-  `https://www.gronxtiy.com/resetpassword/${user._id}/${encodeURIComponent(token)}`;
 
-    const transporter = nodemailer.createTransport({
-      host: "smtp.gmail.com",
-      port: 465,
-      secure: true,
-      auth: {
-        user: "bgopalakrishna745@gmail.com",
-        pass: "sexwsxumyduvlvpr",
-      },
+    const resetLink =
+      `https://www.gronxtiy.com/resetpassword/` +
+      `${user._id}/` +
+      `${encodeURIComponent(token)}`;
 
- tls: {
-    rejectUnauthorized: false,  
-  },
-
-
-
-    });
-
-    await transporter.sendMail({
-      from: "bgopalakrishna745@gmail.com",
-      to: email,
-      subject: "Reset Password",
+    await sendEmail({
+      to: normalizedEmail,
+      subject: "Reset Your Gronxtiy Password",
       html: `
-        <h3>Password Reset</h3>
-        <p>Click below link to reset password:</p>
-        <a href="${resetLink}">Reset Password</a>
-        <p>Valid for 15 minutes</p>
+        <div style="
+          font-family: Arial, sans-serif;
+          max-width: 600px;
+          margin: auto;
+          padding: 30px;
+          border: 1px solid #e5e7eb;
+          border-radius: 12px;
+        ">
+
+          <h2>Gronxtiy Password Reset</h2>
+
+          <p>
+            We received a request to reset your password.
+          </p>
+
+          <p>
+            Click the button below to create a new password:
+          </p>
+
+          <div style="margin: 25px 0;">
+            <a
+              href="${resetLink}"
+              style="
+                display: inline-block;
+                padding: 12px 22px;
+                background: #2563eb;
+                color: white;
+                text-decoration: none;
+                border-radius: 8px;
+              "
+            >
+              Reset Password
+            </a>
+          </div>
+
+          <p>
+            This link is valid for
+            <strong>15 minutes</strong>.
+          </p>
+
+          <p>
+            If you did not request this password reset,
+            you can safely ignore this email.
+          </p>
+
+        </div>
       `,
     });
 
-    res.json({ Status: "Success" });
+    return res.json({
+      Status: "Success",
+    });
 
   } catch (err) {
-    console.error("MAIL ERROR:", err);
-    res.json({ Status: "Error sending mail", error: err.message });
+    console.error("❌ Forgot Password Error:", err);
+
+    return res.json({
+      Status: "Error sending mail",
+      error: err.message,
+    });
   }
 });
 
 
+// ================= RESET PASSWORD =================
 
 app.post("/resetpassword/:id/:token", async (req, res) => {
   const { id } = req.params;
@@ -881,24 +1158,48 @@ app.post("/resetpassword/:id/:token", async (req, res) => {
   const { password } = req.body;
 
   try {
-    const user = await UserModel.findById(id);
-    if (!user) return res.json({ Status: "Invalid user" });
+    let user = await UserModel.findById(id);
 
-    if (!user.resetToken)
-      return res.json({ Status: "Token missing" });
+    if (!user) {
+      user = await Recruiter.findById(id);
+    }
 
-    if (user.resetTokenExpiry < Date.now())
-      return res.json({ Status: "Token expired" });
+    if (!user) {
+      return res.json({
+        Status: "Invalid user",
+      });
+    }
 
-    // ✅ Strong password validation
-const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*[^A-Za-z0-9]).{8,}$/;
+    if (!user.resetToken) {
+      return res.json({
+        Status: "Token missing",
+      });
+    }
 
-if (!passwordRegex.test(password))
-  return res.json({
-    Status: "Password must be 8 characters, include uppercase, lowercase & special character"
-  });
+    if (
+      !user.resetTokenExpiry ||
+      user.resetTokenExpiry < Date.now()
+    ) {
+      return res.json({
+        Status: "Token expired",
+      });
+    }
 
-    jwt.verify(token, process.env.RESET_SECRET || "mysecret123");
+    const passwordRegex =
+      /^(?=.*[a-z])(?=.*[A-Z])(?=.*[^A-Za-z0-9]).{8,}$/;
+
+    if (!passwordRegex.test(password)) {
+      return res.json({
+        Status:
+          "Password must be 8 characters, include uppercase, lowercase & special character",
+      });
+    }
+
+    // Verify token
+    jwt.verify(
+      token,
+      process.env.RESET_SECRET || "mysecret123"
+    );
 
     const hash = await bcrypt.hash(password, 10);
 
@@ -908,28 +1209,35 @@ if (!passwordRegex.test(password))
 
     await user.save();
 
-    res.json({ Status: "Success" });
+    return res.json({
+      Status: "Success",
+    });
 
   } catch (err) {
-    console.error("RESET ERROR:", err);
-    res.json({ Status: "Error resetting password" });
+    console.error("❌ RESET ERROR:", err);
+
+    return res.json({
+      Status: "Error resetting password",
+    });
   }
 });
 
 
 
-// =================logout ==============//
+// ================= LOGOUT =================
+
 app.post("/logout", (req, res) => {
-  res.clearCookie("token", {
+  res.clearCookie("userToken", {
     httpOnly: true,
     secure: true,
     sameSite: "none",
-    path: "/"
+    path: "/",
   });
 
-  res.json({ message: "Logged out successfully" });
+  res.json({
+    message: "Logged out successfully",
+  });
 });
-
 
 
 
