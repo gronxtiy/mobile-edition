@@ -524,33 +524,63 @@ app.post("/api/student/verify-otp", async (req, res) => {
   }
 });
 
-
 app.post("/api/student/resend-otp", async (req, res) => {
   try {
     const { email } = req.body;
 
-    const user = await UserModel.findOne({ email });
+    const user = await UserModel.findOne({
+      email: email.trim().toLowerCase(),
+      role: "student",
+    });
 
-    if (!user)
-      return res.status(400).json({ message: "Student not found" });
+    if (!user) {
+      return res.status(400).json({
+        message: "Student not found",
+      });
+    }
 
-    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    const otp = Math.floor(
+      100000 + Math.random() * 900000
+    ).toString();
 
     user.otp = otp;
-    user.otpExpiry = Date.now() + 60 * 1000;
+
+    // OTP valid for 5 minutes
+    user.otpExpiry = Date.now() + 5 * 60 * 1000;
+
     await user.save();
 
     await transporter.sendMail({
       from: "bgopalakrishna745@gmail.com",
-      to: email,
-      subject: "Resent OTP",
-      html: `<h1>${otp}</h1><p>Valid for 60 seconds</p>`,
+      to: user.email,
+      subject: "Your Gronxtiy Verification OTP",
+      html: `
+        <div style="font-family: Arial, sans-serif;">
+          <h2>Gronxtiy Email Verification</h2>
+
+          <p>Your new OTP is:</p>
+
+          <h1 style="letter-spacing: 8px;">
+            ${otp}
+          </h1>
+
+          <p>This OTP is valid for <strong>5 minutes</strong>.</p>
+
+          <p>If you did not request this OTP, please ignore this email.</p>
+        </div>
+      `,
     });
 
-    res.json({ message: "OTP Resent Successfully" });
+    return res.json({
+      message: "OTP resent successfully",
+    });
 
   } catch (err) {
-    res.status(500).json({ message: err.message });
+    console.error("Resend OTP Error:", err);
+
+    return res.status(500).json({
+      message: "Failed to resend OTP",
+    });
   }
 });
 
@@ -560,18 +590,39 @@ app.post("/api/student/resend-otp", async (req, res) => {
 
 
 // ================= EMAIL TRANSPORTER =================
+
 const transporter = nodemailer.createTransport({
   host: "smtp.gmail.com",
-  port: 465,
-  secure: true,
+  port: 587,
+  secure: false,
+
   auth: {
-    user: "bgopalakrishna745@gmail.com",
-    pass: "sexwsxumyduvlvpr",
+    user: process.env.MAIL_USER,
+    pass: process.env.MAIL_PASS,
   },
+
   tls: {
-    rejectUnauthorized: false,
+    rejectUnauthorized: true,
   },
+
+  connectionTimeout: 15000,
+  greetingTimeout: 15000,
+  socketTimeout: 20000,
 });
+
+// ================= TEST SMTP CONNECTION =================
+
+transporter.verify((error, success) => {
+  if (error) {
+    console.error("❌ SMTP Transporter Error:", error);
+  } else {
+    console.log("✅ SMTP Server ready to send email");
+  }
+});
+
+
+
+
 
 // 🔥 ADD THIS EXACTLY HERE
 transporter.verify((error, success) => {
@@ -879,6 +930,15 @@ app.post("/logout", (req, res) => {
 
 
 
+
+
+
+const studentOnly = (req, res, next) => {
+  if (!req.user || req.user.role !== "student") {
+    return res.status(403).json({ message: "Only students allowed" });
+  }
+  next();
+};
 
 
 
@@ -1597,6 +1657,803 @@ app.get("/api/student/my-applications", authMiddleware, async (req, res) => {
 
 
 
+app.get(
+  "/api/recruiter/analytics",
+  authMiddleware,
+  async (req, res) => {
+    try {
+      // ==================================================
+      // 1. CHECK RECRUITER
+      // ==================================================
+
+      if (req.user.role !== "recruiter") {
+        return res.status(403).json({
+          message: "Only recruiters allowed",
+        });
+      }
+
+      const recruiter = await Recruiter.findById(req.user.id);
+
+      if (!recruiter) {
+        return res.status(404).json({
+          message: "Recruiter not found",
+        });
+      }
+
+      // ==================================================
+      // 2. GET RECRUITER JOBS
+      // ==================================================
+
+      const jobs = await Job.find({
+        recruiterId: req.user.id,
+      }).lean();
+
+      const jobIds = jobs.map((job) => job._id);
+
+      // ==================================================
+      // 3. IF NO JOBS
+      // ==================================================
+
+      if (jobIds.length === 0) {
+        return res.json({
+          totalApplications: 0,
+          totalJobs: 0,
+          publishedJobs: 0,
+
+          shortlisted: 0,
+          reviewing: 0,
+          rejected: 0,
+          selected: 0,
+          hired: 0,
+
+          aiMatches: 0,
+
+          timeToHire: {
+            average: null,
+            fastest: null,
+            slowest: null,
+            totalHiresWithDates: 0,
+          },
+
+          applicationsOverTime: [],
+          sourceBreakdown: [],
+          sourcePerformance: [],
+          departmentBreakdown: [],
+          recentApplications: [],
+        });
+      }
+
+      // ==================================================
+      // 4. GET ALL APPLICATIONS
+      // ==================================================
+
+      const applications = await JobApplication.find({
+        jobId: {
+          $in: jobIds,
+        },
+      })
+        .populate(
+          "jobId",
+          "title department location"
+        )
+        .sort({
+          createdAt: 1,
+        })
+        .lean();
+
+      // ==================================================
+      // 5. HELPER
+      // ==================================================
+
+      const isHired = (application) => {
+        return (
+          application.status === "selected" ||
+          application.status === "hired"
+        );
+      };
+
+      // ==================================================
+      // 6. BASIC COUNTS
+      // ==================================================
+
+      const totalApplications =
+        applications.length;
+
+      const totalJobs =
+        jobs.length;
+
+      const publishedJobs =
+        jobs.filter(
+          (job) =>
+            job.status === "published"
+        ).length;
+
+      const shortlisted =
+        applications.filter(
+          (application) =>
+            application.status ===
+            "shortlisted"
+        ).length;
+
+      const reviewing =
+        applications.filter(
+          (application) =>
+            application.status ===
+            "reviewing"
+        ).length;
+
+      const rejected =
+        applications.filter(
+          (application) =>
+            application.status ===
+            "rejected"
+        ).length;
+
+      const selected =
+        applications.filter(
+          (application) =>
+            isHired(application)
+        ).length;
+
+      const hired = selected;
+
+      // ==================================================
+      // 7. APPLICATIONS OVER TIME
+      // ==================================================
+
+      const monthlyData = {};
+
+      applications.forEach((application) => {
+        const applicationDate =
+          application.createdAt ||
+          application.appliedAt;
+
+        if (!applicationDate) {
+          return;
+        }
+
+        const date =
+          new Date(applicationDate);
+
+        if (
+          Number.isNaN(
+            date.getTime()
+          )
+        ) {
+          return;
+        }
+
+        const year =
+          date.getFullYear();
+
+        const month =
+          date.getMonth();
+
+        const key =
+          `${year}-${String(
+            month + 1
+          ).padStart(2, "0")}`;
+
+        if (!monthlyData[key]) {
+          monthlyData[key] = {
+            month:
+              date.toLocaleString(
+                "en-US",
+                {
+                  month: "short",
+                  year: "numeric",
+                }
+              ),
+
+            applications: 0,
+
+            hired: 0,
+
+            sortDate:
+              new Date(
+                year,
+                month,
+                1
+              ).getTime(),
+          };
+        }
+
+        monthlyData[key]
+          .applications += 1;
+
+        if (
+          isHired(application)
+        ) {
+          monthlyData[key]
+            .hired += 1;
+        }
+      });
+
+      const applicationsOverTime =
+        Object.values(
+          monthlyData
+        )
+          .sort(
+            (a, b) =>
+              a.sortDate -
+              b.sortDate
+          )
+          .map((item) => ({
+            month:
+              item.month,
+
+            applications:
+              Number(
+                item.applications
+              ),
+
+            hired:
+              Number(
+                item.hired
+              ),
+          }));
+
+      // ==================================================
+      // 8. APPLICATION SOURCE
+      // ==================================================
+
+      const sourceCounts = {};
+
+      applications.forEach(
+        (application) => {
+          const source =
+            application.source ||
+            application.applicationSource ||
+            application.jobSource ||
+            application.studentSnapshot
+              ?.source ||
+            "Direct Application";
+
+          const sourceName =
+            String(source).trim();
+
+          if (!sourceName) {
+            return;
+          }
+
+          sourceCounts[
+            sourceName
+          ] =
+            (sourceCounts[
+              sourceName
+            ] || 0) + 1;
+        }
+      );
+
+      const sourceTotal =
+        Object.values(
+          sourceCounts
+        ).reduce(
+          (sum, value) =>
+            sum + value,
+          0
+        );
+
+      const sourceBreakdown =
+        Object.entries(
+          sourceCounts
+        )
+          .map(
+            ([source, count]) => ({
+              source,
+
+              count:
+                Number(count),
+
+              percentage:
+                sourceTotal > 0
+                  ? Number(
+                      (
+                        (count /
+                          sourceTotal) *
+                        100
+                      ).toFixed(1)
+                    )
+                  : 0,
+            })
+          )
+          .sort(
+            (a, b) =>
+              b.count -
+              a.count
+          );
+
+      // ==================================================
+      // 9. SOURCE PERFORMANCE
+      // ==================================================
+
+      const sourcePerformanceMap =
+        {};
+
+      applications.forEach(
+        (application) => {
+          const source =
+            application.source ||
+            application.applicationSource ||
+            application.jobSource ||
+            application.studentSnapshot
+              ?.source ||
+            "Direct Application";
+
+          const sourceName =
+            String(source).trim();
+
+          if (!sourceName) {
+            return;
+          }
+
+          if (
+            !sourcePerformanceMap[
+              sourceName
+            ]
+          ) {
+            sourcePerformanceMap[
+              sourceName
+            ] = {
+              source:
+                sourceName,
+
+              applications: 0,
+
+              hired: 0,
+            };
+          }
+
+          sourcePerformanceMap[
+            sourceName
+          ].applications += 1;
+
+          if (
+            isHired(application)
+          ) {
+            sourcePerformanceMap[
+              sourceName
+            ].hired += 1;
+          }
+        }
+      );
+
+      const sourcePerformance =
+        Object.values(
+          sourcePerformanceMap
+        )
+          .map((item) => ({
+            source:
+              item.source,
+
+            applications:
+              Number(
+                item.applications
+              ),
+
+            hired:
+              Number(
+                item.hired
+              ),
+
+            conversionRate:
+              item.applications >
+              0
+                ? Number(
+                    (
+                      (item.hired /
+                        item.applications) *
+                      100
+                    ).toFixed(1)
+                  )
+                : 0,
+          }))
+          .sort(
+            (a, b) =>
+              b.applications -
+              a.applications
+          );
+
+      // ==================================================
+      // 10. DEPARTMENT BREAKDOWN
+      // ==================================================
+
+      const departmentMap = {};
+
+      applications.forEach(
+        (application) => {
+          const department =
+            application.jobId
+              ?.department ||
+            application.department ||
+            "Other";
+
+          const departmentName =
+            String(
+              department
+            ).trim() ||
+            "Other";
+
+          if (
+            !departmentMap[
+              departmentName
+            ]
+          ) {
+            departmentMap[
+              departmentName
+            ] = {
+              department:
+                departmentName,
+
+              applications: 0,
+
+              hired: 0,
+            };
+          }
+
+          departmentMap[
+            departmentName
+          ].applications += 1;
+
+          if (
+            isHired(application)
+          ) {
+            departmentMap[
+              departmentName
+            ].hired += 1;
+          }
+        }
+      );
+
+      const departmentBreakdown =
+        Object.values(
+          departmentMap
+        ).sort(
+          (a, b) =>
+            b.applications -
+            a.applications
+        );
+
+      // ==================================================
+      // 11. TIME TO HIRE
+      // ==================================================
+
+      const timeToHireValues = [];
+
+      applications.forEach(
+        (application) => {
+          if (
+            !isHired(application)
+          ) {
+            return;
+          }
+
+          const appliedDate =
+            application.createdAt ||
+            application.appliedAt;
+
+          const hiredDate =
+            application.selectedAt ||
+            application.hiredAt ||
+            application.hiringDate ||
+            application.updatedAt;
+
+          if (
+            !appliedDate ||
+            !hiredDate
+          ) {
+            return;
+          }
+
+          const start =
+            new Date(
+              appliedDate
+            );
+
+          const end =
+            new Date(
+              hiredDate
+            );
+
+          if (
+            Number.isNaN(
+              start.getTime()
+            ) ||
+            Number.isNaN(
+              end.getTime()
+            )
+          ) {
+            return;
+          }
+
+          const days =
+            (
+              end.getTime() -
+              start.getTime()
+            ) /
+            (
+              1000 *
+              60 *
+              60 *
+              24
+            );
+
+          if (days >= 0) {
+            timeToHireValues.push(
+              days
+            );
+          }
+        }
+      );
+
+      let timeToHire = {
+        average: null,
+        fastest: null,
+        slowest: null,
+        totalHiresWithDates: 0,
+      };
+
+      if (
+        timeToHireValues.length >
+        0
+      ) {
+        const average =
+          timeToHireValues.reduce(
+            (sum, value) =>
+              sum + value,
+            0
+          ) /
+          timeToHireValues.length;
+
+        timeToHire = {
+          average:
+            Math.round(
+              average
+            ),
+
+          fastest:
+            Math.round(
+              Math.min(
+                ...timeToHireValues
+              )
+            ),
+
+          slowest:
+            Math.round(
+              Math.max(
+                ...timeToHireValues
+              )
+            ),
+
+          totalHiresWithDates:
+            timeToHireValues.length,
+        };
+      }
+
+      // ==================================================
+      // 12. RECENT APPLICATIONS
+      // ==================================================
+
+      const recentApplications =
+        applications
+          .slice()
+          .sort(
+            (a, b) =>
+              new Date(
+                b.createdAt ||
+                b.appliedAt
+              ) -
+              new Date(
+                a.createdAt ||
+                a.appliedAt
+              )
+          )
+          .slice(0, 10)
+          .map(
+            (application) => ({
+              _id:
+                application._id,
+
+              status:
+                application.status,
+
+              appliedAt:
+                application.createdAt ||
+                application.appliedAt,
+
+              jobTitle:
+                application.jobId
+                  ?.title || "",
+
+              jobDepartment:
+                application.jobId
+                  ?.department ||
+                application.department ||
+                "",
+
+              jobLocation:
+                application.jobId
+                  ?.location || "",
+
+              studentSnapshot:
+                application.studentSnapshot ||
+                {},
+            })
+          );
+
+      // ==================================================
+      // 13. AI MATCHES
+      // ==================================================
+      //
+      // Until the actual AI-match field is confirmed,
+      // use total applications.
+      //
+      // This prevents the dashboard from showing
+      // undefined/null.
+      //
+
+      const aiMatches =
+        totalApplications;
+
+      // ==================================================
+      // 14. FINAL RESPONSE
+      // ==================================================
+
+      const analytics = {
+        totalApplications,
+
+        totalJobs,
+
+        publishedJobs,
+
+        shortlisted,
+
+        reviewing,
+
+        rejected,
+
+        selected,
+
+        hired,
+
+        aiMatches,
+
+        timeToHire,
+
+        applicationsOverTime,
+
+        sourceBreakdown,
+
+        sourcePerformance,
+
+        departmentBreakdown,
+
+        recentApplications,
+      };
+
+      // ==================================================
+      // 15. DEBUG LOG
+      // ==================================================
+
+      console.log(
+        "\n======================================"
+      );
+
+      console.log(
+        "RECRUITER ANALYTICS"
+      );
+
+      console.log(
+        "Recruiter:",
+        req.user.id
+      );
+
+      console.log(
+        "Total Jobs:",
+        totalJobs
+      );
+
+      console.log(
+        "Published Jobs:",
+        publishedJobs
+      );
+
+      console.log(
+        "Total Applications:",
+        totalApplications
+      );
+
+      console.log(
+        "Shortlisted:",
+        shortlisted
+      );
+
+      console.log(
+        "Reviewing:",
+        reviewing
+      );
+
+      console.log(
+        "Rejected:",
+        rejected
+      );
+
+      console.log(
+        "Hired:",
+        hired
+      );
+
+      console.log(
+        "Applications Over Time:",
+        JSON.stringify(
+          applicationsOverTime,
+          null,
+          2
+        )
+      );
+
+      console.log(
+        "Source Breakdown:",
+        JSON.stringify(
+          sourceBreakdown,
+          null,
+          2
+        )
+      );
+
+      console.log(
+        "Department Breakdown:",
+        JSON.stringify(
+          departmentBreakdown,
+          null,
+          2
+        )
+      );
+
+      console.log(
+        "Time To Hire:",
+        JSON.stringify(
+          timeToHire,
+          null,
+          2
+        )
+      );
+
+      console.log(
+        "======================================\n"
+      );
+
+      return res.json(
+        analytics
+      );
+    } catch (error) {
+      console.error(
+        "Recruiter analytics error:",
+        error
+      );
+
+      return res.status(500).json({
+        message:
+          error.message ||
+          "Failed to load recruiter analytics",
+      });
+    }
+  }
+);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 // ================= RECRUITER SETTINGS =================
@@ -1790,15 +2647,6 @@ const FriendRequest = mongoose.model("FriendRequest", FriendRequestSchema);
 
 
 
-
-
-
-const studentOnly = (req, res, next) => {
-  if (!req.user || req.user.role !== "student") {
-    return res.status(403).json({ message: "Only students allowed" });
-  }
-  next();
-};
 
 
 
@@ -5910,7 +6758,6 @@ async function createCourseNotification({
 
 
 
-
 app.put(
   "/api/student/course-profile/me",
   authMiddleware,
@@ -5936,13 +6783,17 @@ app.put(
       const user = await UserModel.findById(req.user.id);
 
       if (!user) {
-        return res.status(404).json({ message: "Student not found" });
+        return res.status(404).json({
+          message: "Student not found",
+        });
       }
 
+      // Make sure courseProfile exists
       if (!user.courseProfile) {
         user.courseProfile = {};
       }
 
+      // Text fields
       user.courseProfile.name = name ?? "";
       user.courseProfile.about = about ?? "";
       user.courseProfile.instagram = instagram ?? "";
@@ -5956,58 +6807,124 @@ app.put(
       const avatarFile = req.files?.avatar?.[0];
       const backgroundFile = req.files?.backgroundImage?.[0];
 
-      console.log("req.files =", req.files);
-      console.log("avatarFile =", avatarFile);
-      console.log("backgroundFile =", backgroundFile);
+      console.log("=================================");
+      console.log("COURSE PROFILE UPDATE");
+      console.log("avatarFile:", avatarFile?.originalname);
+      console.log("backgroundFile:", backgroundFile?.originalname);
+      console.log("Old course avatar:", user.courseProfile.avatar);
+      console.log("=================================");
 
-      // upload avatar
+      // =========================
+      // COURSE PROFILE AVATAR
+      // =========================
       if (avatarFile) {
+        // Delete old course-profile avatar only
         if (user.courseProfile.avatarPublicId) {
-          await cloudinary.uploader.destroy(user.courseProfile.avatarPublicId, {
-            resource_type: "image",
-          });
+          try {
+            await cloudinary.uploader.destroy(
+              user.courseProfile.avatarPublicId,
+              {
+                resource_type: "image",
+              }
+            );
+          } catch (cloudinaryErr) {
+            console.error(
+              "Old course avatar delete error:",
+              cloudinaryErr
+            );
+          }
         }
 
+        // Upload NEW course-profile avatar
         const avatarResult = await uploadToCloudinary(
           avatarFile.buffer,
           "gronxtiy/course_profile/avatar",
           "image"
         );
 
-        user.courseProfile.avatar = avatarResult.secure_url || "";
-        user.courseProfile.avatarPublicId = avatarResult.public_id || "";
+        console.log("NEW COURSE AVATAR RESULT:", avatarResult);
+
+        user.courseProfile.avatar = avatarResult.secure_url;
+        user.courseProfile.avatarPublicId = avatarResult.public_id;
+
+        console.log(
+          "Saved course avatar URL:",
+          user.courseProfile.avatar
+        );
       }
 
-      // upload background
+      // =========================
+      // COURSE PROFILE BACKGROUND
+      // =========================
       if (backgroundFile) {
+        // Delete old course-profile background only
         if (user.courseProfile.backgroundImagePublicId) {
-          await cloudinary.uploader.destroy(
-            user.courseProfile.backgroundImagePublicId,
-            {
-              resource_type: "image",
-            }
-          );
+          try {
+            await cloudinary.uploader.destroy(
+              user.courseProfile.backgroundImagePublicId,
+              {
+                resource_type: "image",
+              }
+            );
+          } catch (cloudinaryErr) {
+            console.error(
+              "Old course background delete error:",
+              cloudinaryErr
+            );
+          }
         }
 
+        // Upload NEW background
         const bgResult = await uploadToCloudinary(
           backgroundFile.buffer,
           "gronxtiy/course_profile/background",
           "image"
         );
 
-        user.courseProfile.backgroundImage = bgResult.secure_url || "";
-        user.courseProfile.backgroundImagePublicId = bgResult.public_id || "";
+        user.courseProfile.backgroundImage = bgResult.secure_url;
+        user.courseProfile.backgroundImagePublicId =
+          bgResult.public_id;
       }
 
       await user.save();
 
+      // Return the ACTUAL saved course profile
       return res.json({
         message: "Course profile updated successfully",
-        courseProfile: user.courseProfile,
+
+        courseProfile: {
+          name: user.courseProfile.name || user.name || "",
+          about: user.courseProfile.about || "",
+
+          // IMPORTANT:
+          // Course avatar comes from courseProfile.avatar
+          // NOT user.avatar
+          avatar: user.courseProfile.avatar || "",
+
+          backgroundImage:
+            user.courseProfile.backgroundImage || "",
+
+          instagram: user.courseProfile.instagram || "",
+          linkedin: user.courseProfile.linkedin || "",
+          telegram: user.courseProfile.telegram || "",
+
+          customLink1Label:
+            user.courseProfile.customLink1Label || "",
+          customLink1Url:
+            user.courseProfile.customLink1Url || "",
+
+          customLink2Label:
+            user.courseProfile.customLink2Label || "",
+          customLink2Url:
+            user.courseProfile.customLink2Url || "",
+        },
       });
     } catch (err) {
       console.error("Update course profile error:", err);
-      return res.status(500).json({ message: err.message || "Server error" });
+
+      return res.status(500).json({
+        message: err.message || "Server error",
+      });
     }
   }
 );
@@ -6041,7 +6958,7 @@ app.get("/api/student/course-profile/me", authMiddleware, studentOnly, async (re
       courseProfile: {
         name: user.courseProfile?.name || user.name || "",
         about: user.courseProfile?.about || "",
-        avatar: user.courseProfile?.avatar || "",
+  avatar: user.courseProfile?.avatar || "",
         backgroundImage: user.courseProfile?.backgroundImage || "",
         instagram: user.courseProfile?.instagram || "",
         linkedin: user.courseProfile?.linkedin || "",
@@ -6195,7 +7112,7 @@ app.get("/api/student/courses", authMiddleware, studentOnly, async (req, res) =>
     const me = await UserModel.findById(req.user.id).select("savedCourses");
 
     const courses = await Course.find()
-      .populate("userId", "name avatar headline")
+.populate("userId", "name avatar headline courseProfile")
       .sort({ createdAt: -1 });
 
     const savedSet = new Set((me?.savedCourses || []).map((id) => String(id)));
@@ -6219,11 +7136,19 @@ app.get("/api/student/courses", authMiddleware, studentOnly, async (req, res) =>
       isSaved: savedSet.has(String(course._id)),
       createdAt: course.createdAt,
       owner: {
-        _id: course.userId?._id || "",
-        name: course.userId?.name || course.author || "Student",
-        avatar: course.userId?.avatar || course.profileImage || "",
-        headline: course.userId?.headline || "",
-      },
+  _id: course.userId?._id || "",
+  name:
+    course.userId?.courseProfile?.name ||
+    course.userId?.name ||
+    course.author ||
+    "Student",
+  avatar:
+    course.userId?.courseProfile?.avatar ||
+    course.userId?.avatar ||
+    course.profileImage ||
+    "",
+  headline: course.userId?.headline || "",
+},
       isOwner: String(course.userId?._id) === String(req.user.id),
     }));
 
@@ -6252,7 +7177,14 @@ app.get("/api/student/courses/user/:userId", authMiddleware, studentOnly, async 
         _id: user._id,
         name: user.courseProfile?.name || user.name || "Student",
         about: user.courseProfile?.about || "",
-        avatar: user.courseProfile?.avatar || "",
+
+
+                avatar: user.courseProfile?.avatar || user.avatar || "",
+
+
+
+
+
         backgroundImage: user.courseProfile?.backgroundImage || "",
         instagram: user.courseProfile?.instagram || "",
         linkedin: user.courseProfile?.linkedin || "",
@@ -6336,7 +7268,7 @@ app.delete("/api/student/course-profile/background", authMiddleware, studentOnly
 app.get("/api/student/course/:courseId", authMiddleware, studentOnly, async (req, res) => {
   try {
     const course = await Course.findById(req.params.courseId)
-      .populate("userId", "name avatar headline")
+     .populate("userId", "name avatar headline courseProfile")
       .populate("comments.userId", "name avatar");
 
     if (!course) {
@@ -6535,7 +7467,7 @@ app.get("/api/student/saved-courses", authMiddleware, studentOnly, async (req, r
       path: "savedCourses",
       populate: {
         path: "userId",
-        select: "name avatar headline",
+        select: "name avatar headline courseProfile",
       },
     });
 
@@ -6558,11 +7490,19 @@ app.get("/api/student/saved-courses", authMiddleware, studentOnly, async (req, r
       ),
       isSaved: true,
       owner: {
-        _id: course.userId?._id || "",
-        name: course.userId?.name || course.author || "Student",
-        avatar: course.userId?.avatar || course.profileImage || "",
-        headline: course.userId?.headline || "",
-      },
+  _id: course.userId?._id || "",
+  name:
+    course.userId?.courseProfile?.name ||
+    course.userId?.name ||
+    course.author ||
+    "Student",
+  avatar:
+    course.userId?.courseProfile?.avatar ||
+    course.userId?.avatar ||
+    course.profileImage ||
+    "",
+  headline: course.userId?.headline || "",
+},
     }));
 
     return res.json(formatted);
