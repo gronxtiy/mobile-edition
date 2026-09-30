@@ -35,17 +35,23 @@ app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 
 const allowedOrigins = [
+  // Local development
   "http://localhost:5176",
   "http://localhost:5177",
 
+  // Capacitor Android
+  "https://localhost",
+
+  // Main website
   "https://gronxtiy.com",
   "https://www.gronxtiy.com",
 
+  // Admin
   "https://admin.gronxtiy.com",
 
+  // Vercel
   "https://gronxtiy-beta-git-mobile-edition-gronxtiy.vercel.app",
   "https://mobile-edition.vercel.app"
-
 ];
 
 app.use(
