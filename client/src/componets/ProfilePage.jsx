@@ -322,12 +322,16 @@ export default function ProfilePage({ onSettingsClick }) {
   const [experience, setExperience] = useState([]);
   const [education, setEducation] = useState([]);
   const [reelsContent, setReelsContent] = useState([]);
+
+
   const [postsContent, setPostsContent] = useState([]);
   const [achievements, setAchievements] = useState([]);
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [sendingRequest, setSendingRequest] = useState(false);
+
+
 
   const [editSection, setEditSection] = useState("");
 
@@ -1007,6 +1011,7 @@ const handleDeleteContent = async (content) => {
       setReelsContent((prev) =>
         prev.filter((item) => String(item.id) !== String(content.id))
       );
+      
     } else {
       setPostsContent((prev) =>
         prev.filter((item) => String(item.id) !== String(content.id))
@@ -1247,7 +1252,6 @@ const handleDeleteContent = async (content) => {
                     <strong>{profile.followers}</strong>
                     <span>Followers</span>
                   </div>
-
                   <div className="profile-stat-inline">
                     <strong>{completionScore}%</strong>
                     <span>Profile Strength</span>
