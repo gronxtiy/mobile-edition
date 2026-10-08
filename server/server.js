@@ -51,6 +51,7 @@ const allowedOrigins = [
   "https://gronxtiy-beta-git-mobile-edition-gronxtiy.vercel.app",
   "https://mobile-edition.vercel.app",
 
+
 ];
 
 app.use(
@@ -9601,3 +9602,5 @@ const PORT = process.env.PORT || 3006;
 server.listen(PORT, () => {
   console.log(`🚀 Server running on port ${PORT}`);
 });
+
+
