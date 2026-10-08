@@ -110,8 +110,10 @@ app.use("/api/cloudinary", cloudinaryTestRoute);
 
 
 const sendEmail = async ({ to, subject, html }) => {
+
+
   const { data, error } = await resend.emails.send({
-    from: "Gronxtiy <onboarding@resend.dev>",
+    from: "Gronxity <nikhilkota@gronxity.com>",
     to: [to],
     subject,
     html,
@@ -664,7 +666,9 @@ app.post("/api/student/resend-otp", async (req, res) => {
 // ================= EMAIL TRANSPORTER =================
 const sendOTPEmail = async (email, otp) => {
   const { data, error } = await resend.emails.send({
-    from: "Gronxtiy <onboarding@resend.dev>",
+
+    from: "Gronxity <nikhilkota@gronxity.com>",
+
     to: [email],
     subject: "Your Gronxtiy Verification OTP",
 
