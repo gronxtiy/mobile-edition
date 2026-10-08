@@ -18,8 +18,6 @@ const { Resend } = require("resend");
 const resend = new Resend(process.env.RESEND_API_KEY);
 
 
-// Hybrid job-recommendation engine (BGE-small semantic + BM25 lexical fusion).
-// Modular code lives under ./recommender — see recommender/README.md.
 const recommender = require("./recommender");
 
 const http = require("http");
@@ -51,7 +49,10 @@ const allowedOrigins = [
 
   // Vercel
   "https://gronxtiy-beta-git-mobile-edition-gronxtiy.vercel.app",
-  "https://mobile-edition.vercel.app"
+  "https://mobile-edition.vercel.app",
+
+  
+
 ];
 
 app.use(
@@ -452,12 +453,21 @@ app.get("/", (req, res) => {
 
 
 
-// ================= REGISTER =================
+// ============================================================
+// STUDENT REGISTER
+// ============================================================
+
 app.post("/register", async (req, res) => {
   try {
-    const { name, email, password, confirmPassword } = req.body;
+    const {
+      name,
+      email,
+      password,
+      confirmPassword,
+    } = req.body;
 
     // ================= VALIDATION =================
+
     if (!name || !email || !password || !confirmPassword) {
       return res.status(400).json({
         message: "All fields required",
@@ -480,10 +490,12 @@ app.post("/register", async (req, res) => {
       });
     }
 
-    // Normalize email
+    // ================= NORMALIZE EMAIL =================
+
     const normalizedEmail = email.trim().toLowerCase();
 
     // ================= CHECK RECRUITER =================
+
     const recruiterExists = await Recruiter.findOne({
       email: normalizedEmail,
     });
@@ -494,45 +506,159 @@ app.post("/register", async (req, res) => {
       });
     }
 
-    // ================= CHECK USER =================
-    const exists = await UserModel.findOne({
+    // ================= CHECK STUDENT =================
+
+    const existingUser = await UserModel.findOne({
       email: normalizedEmail,
+      role: "student",
     });
 
-    if (exists) {
+    // ====================================================
+    // EXISTING VERIFIED USER
+    // ====================================================
+
+    if (existingUser && existingUser.isVerified === true) {
       return res.status(400).json({
-        message: "User already exists",
+        message: "Account already exists. Please login.",
       });
     }
 
-    // ================= HASH PASSWORD =================
+    // ====================================================
+    // EXISTING UNVERIFIED USER
+    // ====================================================
+
+    if (existingUser && existingUser.isVerified !== true) {
+      console.log(
+        "⚠️ Existing unverified account found:",
+        normalizedEmail
+      );
+
+      const hash = await bcrypt.hash(password, 10);
+
+      const otp = Math.floor(
+        100000 + Math.random() * 900000
+      ).toString();
+
+      const otpExpiry = new Date(
+        Date.now() + 5 * 60 * 1000
+      );
+
+      // Update account
+      existingUser.name = name.trim();
+      existingUser.password = hash;
+      existingUser.otp = otp;
+      existingUser.otpExpiry = otpExpiry;
+      existingUser.isVerified = false;
+
+      await existingUser.save();
+
+      try {
+        await sendOTPEmail(
+          normalizedEmail,
+          otp
+        );
+      } catch (emailError) {
+        console.error(
+          "❌ OTP EMAIL ERROR:",
+          emailError
+        );
+
+        // Keep account unverified.
+        // Remove invalid OTP so it cannot be used.
+        existingUser.otp = null;
+        existingUser.otpExpiry = null;
+
+        await existingUser.save();
+
+        return res.status(500).json({
+          message:
+            "Account exists but OTP could not be sent. Please try again.",
+        });
+      }
+
+      console.log(
+        "✅ New OTP sent to existing unverified account"
+      );
+
+      return res.json({
+        message: "OTP sent successfully",
+        requiresVerification: true,
+        otpExpiry: otpExpiry.getTime(),
+      });
+    }
+
+    // ====================================================
+    // NEW STUDENT
+    // ====================================================
+
     const hash = await bcrypt.hash(password, 10);
 
-    // ================= GENERATE OTP =================
     const otp = Math.floor(
       100000 + Math.random() * 900000
     ).toString();
 
-    // ================= CREATE STUDENT =================
-    await UserModel.create({
-      name,
+    const otpExpiry = new Date(
+      Date.now() + 5 * 60 * 1000
+    );
+
+    // Create student
+    const newUser = await UserModel.create({
+      name: name.trim(),
       email: normalizedEmail,
       password: hash,
       role: "student",
       isVerified: false,
       otp,
-      otpExpiry: Date.now() + 5 * 60 * 1000, // 5 minutes
+      otpExpiry,
     });
 
-    // ================= SEND OTP USING RESEND =================
-    await sendOTPEmail(normalizedEmail, otp);
+    console.log(
+      "✅ Student created:",
+      normalizedEmail
+    );
+
+    // ================= SEND OTP =================
+
+    try {
+      await sendOTPEmail(
+        normalizedEmail,
+        otp
+      );
+    } catch (emailError) {
+      console.error(
+        "❌ OTP EMAIL ERROR:",
+        emailError
+      );
+
+      // IMPORTANT:
+      // If email sending fails for a brand-new account,
+      // remove the account so user can register again.
+      await UserModel.deleteOne({
+        _id: newUser._id,
+      });
+
+      return res.status(500).json({
+        message:
+          "OTP could not be sent. Please try registration again.",
+      });
+    }
+
+    console.log(
+      "✅ OTP sent successfully:",
+      normalizedEmail
+    );
 
     return res.json({
       message: "OTP sent successfully",
+      requiresVerification: true,
+      otpExpiry: otpExpiry.getTime(),
     });
 
   } catch (err) {
-    console.error("❌ Register Error:", err);
+    console.error(
+      "❌ REGISTER ERROR:",
+      err
+    );
 
     return res.status(500).json({
       message: "Registration failed",
@@ -542,120 +668,274 @@ app.post("/register", async (req, res) => {
 });
 
 
+// ============================================================
+// VERIFY STUDENT OTP
+// ============================================================
 
+app.post(
+  "/api/student/verify-otp",
+  async (req, res) => {
+    try {
+      const { email, otp } = req.body;
 
+      const normalizedEmail =
+        email?.trim().toLowerCase();
 
+      const cleanOtp =
+        otp?.toString().trim();
 
+      if (!normalizedEmail || !cleanOtp) {
+        return res.status(400).json({
+          message: "Email and OTP are required",
+        });
+      }
 
+      const user = await UserModel.findOne({
+        email: normalizedEmail,
+        role: "student",
+      });
 
+      if (!user) {
+        return res.status(400).json({
+          message: "Student not found",
+        });
+      }
 
+      // Already verified
+      if (user.isVerified === true) {
+        return res.status(400).json({
+          message:
+            "Account is already verified. Please login.",
+        });
+      }
 
+      // ==================================================
+      // CHECK OTP EXISTS
+      // ==================================================
 
+      if (!user.otp || !user.otpExpiry) {
+        return res.status(400).json({
+          message:
+            "OTP is no longer valid. Please request a new OTP.",
+        });
+      }
 
+      // ==================================================
+      // CHECK EXPIRY FIRST
+      // ==================================================
 
+      if (
+        new Date(user.otpExpiry).getTime() <=
+        Date.now()
+      ) {
+        // Remove expired OTP
+        user.otp = null;
+        user.otpExpiry = null;
 
+        await user.save();
 
+        return res.status(400).json({
+          message:
+            "OTP expired. Please click Resend OTP.",
+        });
+      }
 
-app.post("/api/student/verify-otp", async (req, res) => {
-  try {
-    const { email, otp } = req.body;
+      // ==================================================
+      // CHECK OTP
+      // ==================================================
 
-    const normalizedEmail = email?.trim().toLowerCase();
+      if (user.otp !== cleanOtp) {
+        return res.status(400).json({
+          message: "Invalid OTP",
+        });
+      }
 
-    const user = await UserModel.findOne({
-      email: normalizedEmail,
-      role: "student",
-    });
+      // ==================================================
+      // SUCCESS
+      // ==================================================
 
-    if (!user) {
-      return res.status(400).json({
-        message: "Student not found",
+      user.isVerified = true;
+
+      // IMPORTANT:
+      // Delete OTP immediately after successful verification.
+      user.otp = null;
+      user.otpExpiry = null;
+
+      await user.save();
+
+      console.log(
+        "✅ STUDENT VERIFIED:",
+        normalizedEmail
+      );
+
+      return res.json({
+        message:
+          "Account verified successfully!",
+        verified: true,
+      });
+
+    } catch (err) {
+      console.error(
+        "❌ VERIFY OTP ERROR:",
+        err
+      );
+
+      return res.status(500).json({
+        message:
+          "OTP verification failed",
+        error: err.message,
       });
     }
-
-    if (user.otp !== otp) {
-      return res.status(400).json({
-        message: "Invalid OTP",
-      });
-    }
-
-    if (!user.otpExpiry || user.otpExpiry < Date.now()) {
-      return res.status(400).json({
-        message: "OTP expired",
-      });
-    }
-
-    user.isVerified = true;
-    user.otp = null;
-    user.otpExpiry = null;
-
-    await user.save();
-
-    return res.json({
-      message: "Student Registered Successfully ✅",
-    });
-
-  } catch (err) {
-    console.error("❌ Verify OTP Error:", err);
-
-    return res.status(500).json({
-      message: err.message,
-    });
   }
-});
+);
 
 
+// ============================================================
+// RESEND STUDENT OTP
+// ============================================================
 
-app.post("/api/student/resend-otp", async (req, res) => {
-  try {
-    const { email } = req.body;
+app.post(
+  "/api/student/resend-otp",
+  async (req, res) => {
+    try {
+      const { email } = req.body;
 
-    const normalizedEmail = email?.trim().toLowerCase();
+      const normalizedEmail =
+        email?.trim().toLowerCase();
 
-    if (!normalizedEmail) {
-      return res.status(400).json({
-        message: "Email is required",
+      if (!normalizedEmail) {
+        return res.status(400).json({
+          message: "Email is required",
+        });
+      }
+
+      const user = await UserModel.findOne({
+        email: normalizedEmail,
+        role: "student",
+      });
+
+      if (!user) {
+        return res.status(400).json({
+          message: "Student not found",
+        });
+      }
+
+      // ==================================================
+      // ALREADY VERIFIED
+      // ==================================================
+
+      if (user.isVerified === true) {
+        return res.status(400).json({
+          message:
+            "Account is already verified. Please login.",
+        });
+      }
+
+      // ==================================================
+      // IMPORTANT:
+      // SERVER ALSO CHECKS EXPIRY
+      // ==================================================
+
+      if (
+        user.otpExpiry &&
+        new Date(user.otpExpiry).getTime() >
+          Date.now()
+      ) {
+        const remainingSeconds = Math.ceil(
+          (
+            new Date(user.otpExpiry).getTime() -
+            Date.now()
+          ) / 1000
+        );
+
+        return res.status(429).json({
+          message:
+            "Please wait until the current OTP expires before requesting a new OTP.",
+          remainingSeconds,
+        });
+      }
+
+      // ==================================================
+      // GENERATE NEW OTP
+      // ==================================================
+
+      const newOtp = Math.floor(
+        100000 + Math.random() * 900000
+      ).toString();
+
+      const newOtpExpiry = new Date(
+        Date.now() + 5 * 60 * 1000
+      );
+
+      // ==================================================
+      // SAVE NEW OTP
+      // ==================================================
+
+      user.otp = newOtp;
+      user.otpExpiry = newOtpExpiry;
+      user.isVerified = false;
+
+      await user.save();
+
+      console.log(
+        "🔄 NEW OTP GENERATED:",
+        normalizedEmail
+      );
+
+      // ==================================================
+      // SEND NEW OTP
+      // ==================================================
+
+      try {
+        await sendOTPEmail(
+          normalizedEmail,
+          newOtp
+        );
+      } catch (emailError) {
+        console.error(
+          "❌ RESEND EMAIL ERROR:",
+          emailError
+        );
+
+        // New OTP must NOT remain valid if
+        // the email was not successfully sent.
+        user.otp = null;
+        user.otpExpiry = null;
+
+        await user.save();
+
+        return res.status(500).json({
+          message:
+            "New OTP could not be sent. Please try again.",
+        });
+      }
+
+      console.log(
+        "✅ NEW OTP SENT:",
+        normalizedEmail
+      );
+
+      return res.json({
+        message:
+          "New OTP sent successfully",
+        otpExpiry:
+          newOtpExpiry.getTime(),
+      });
+
+    } catch (err) {
+      console.error(
+        "❌ RESEND OTP ERROR:",
+        err
+      );
+
+      return res.status(500).json({
+        message:
+          "Failed to resend OTP",
+        error: err.message,
       });
     }
-
-    const user = await UserModel.findOne({
-      email: normalizedEmail,
-      role: "student",
-    });
-
-    if (!user) {
-      return res.status(400).json({
-        message: "Student not found",
-      });
-    }
-
-    const otp = Math.floor(
-      100000 + Math.random() * 900000
-    ).toString();
-
-    user.otp = otp;
-
-    // OTP valid for 5 minutes
-    user.otpExpiry = Date.now() + 5 * 60 * 1000;
-
-    await user.save();
-
-    // Send using Resend
-    await sendOTPEmail(user.email, otp);
-
-    return res.json({
-      message: "OTP resent successfully",
-    });
-
-  } catch (err) {
-    console.error("❌ Resend OTP Error:", err);
-
-    return res.status(500).json({
-      message: "Failed to resend OTP",
-      error: err.message,
-    });
   }
-});
+);
 
 
 
