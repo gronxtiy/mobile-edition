@@ -113,7 +113,7 @@ const sendEmail = async ({ to, subject, html }) => {
 
 
   const { data, error } = await resend.emails.send({
-    from: "Gronxity <nikhilkota@gronxity.com>",
+    from: "Gronxity <nikhilkota@gronxtiy.com>",
     to: [to],
     subject,
     html,
@@ -667,7 +667,7 @@ app.post("/api/student/resend-otp", async (req, res) => {
 const sendOTPEmail = async (email, otp) => {
   const { data, error } = await resend.emails.send({
 
-    from: "Gronxity <nikhilkota@gronxity.com>",
+    from: "Gronxity <nikhilkota@gronxtiy.com>",
 
     to: [email],
     subject: "Your Gronxtiy Verification OTP",
