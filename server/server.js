@@ -33,6 +33,7 @@ app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 
 const allowedOrigins = [
+<<<<<<< HEAD
   // Local development
   "http://localhost:5176",
   "http://localhost:5177",
@@ -51,6 +52,18 @@ const allowedOrigins = [
   "https://gronxtiy-beta-git-mobile-edition-gronxtiy.vercel.app",
   "https://mobile-edition.vercel.app",
 
+=======
+  "http://localhost:5176",
+  "http://localhost:5177",
+
+  "https://gronxtiy.com",
+  "https://www.gronxtiy.com",
+
+  "https://admin.gronxtiy.com",
+
+  "https://gronxtiy-beta-git-mobile-edition-gronxtiy.vercel.app",
+  "https://mobile-edition.vercel.app"
+>>>>>>> 26abf30 (Update app features and switch email to Resend)
 
 ];
 
@@ -110,10 +123,15 @@ app.use("/api/cloudinary", cloudinaryTestRoute);
 
 
 const sendEmail = async ({ to, subject, html }) => {
+<<<<<<< HEAD
 
 
   const { data, error } = await resend.emails.send({
     from: "Gronxity <nikhilkota@gronxtiy.com>",
+=======
+  const { data, error } = await resend.emails.send({
+    from: "Gronxtiy <onboarding@resend.dev>",
+>>>>>>> 26abf30 (Update app features and switch email to Resend)
     to: [to],
     subject,
     html,
@@ -666,9 +684,13 @@ app.post("/api/student/resend-otp", async (req, res) => {
 // ================= EMAIL TRANSPORTER =================
 const sendOTPEmail = async (email, otp) => {
   const { data, error } = await resend.emails.send({
+<<<<<<< HEAD
 
     from: "Gronxity <nikhilkota@gronxtiy.com>",
 
+=======
+    from: "Gronxtiy <onboarding@resend.dev>",
+>>>>>>> 26abf30 (Update app features and switch email to Resend)
     to: [email],
     subject: "Your Gronxtiy Verification OTP",
 
