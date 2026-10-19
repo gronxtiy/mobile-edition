@@ -16,7 +16,7 @@ const cloudinaryTestRoute = require("./routes/cloudinaryTest");
 const uploadToCloudinary = require("./utils/uploadToCloudinary");
 const { Resend } = require("resend");
 const resend = new Resend(process.env.RESEND_API_KEY);
-
+const multer = require("multer");
 
 const recommender = require("./recommender");
 
@@ -33,7 +33,6 @@ app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 
 const allowedOrigins = [
-<<<<<<< HEAD
   // Local development
   "http://localhost:5176",
   "http://localhost:5177",
@@ -52,18 +51,6 @@ const allowedOrigins = [
   "https://gronxtiy-beta-git-mobile-edition-gronxtiy.vercel.app",
   "https://mobile-edition.vercel.app",
 
-=======
-  "http://localhost:5176",
-  "http://localhost:5177",
-
-  "https://gronxtiy.com",
-  "https://www.gronxtiy.com",
-
-  "https://admin.gronxtiy.com",
-
-  "https://gronxtiy-beta-git-mobile-edition-gronxtiy.vercel.app",
-  "https://mobile-edition.vercel.app"
->>>>>>> 26abf30 (Update app features and switch email to Resend)
 
 ];
 
@@ -122,16 +109,15 @@ app.use("/api/cloudinary", cloudinaryTestRoute);
 
 
 
+
+
+
+
 const sendEmail = async ({ to, subject, html }) => {
-<<<<<<< HEAD
 
 
   const { data, error } = await resend.emails.send({
     from: "Gronxity <nikhilkota@gronxtiy.com>",
-=======
-  const { data, error } = await resend.emails.send({
-    from: "Gronxtiy <onboarding@resend.dev>",
->>>>>>> 26abf30 (Update app features and switch email to Resend)
     to: [to],
     subject,
     html,
@@ -417,29 +403,24 @@ const authMiddleware = (req, res, next) => {
 
 
 
+const studentOnly = (req, res, next) => {
+  if (!req.user || req.user.role !== "student") {
+    return res.status(403).json({ message: "Only students allowed" });
+  }
+  next();
+};
 
 
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+// recruiter only middleware
+const recruiterOnly = (req, res, next) => {
+  if (!req.user || req.user.role !== "recruiter") {
+    return res.status(403).json({ message: "Only recruiters allowed" });
+  }
+  next();
+};
 
 
 app.get("/api/recruiter/dashboard", authMiddleware, (req, res) => {
@@ -684,13 +665,9 @@ app.post("/api/student/resend-otp", async (req, res) => {
 // ================= EMAIL TRANSPORTER =================
 const sendOTPEmail = async (email, otp) => {
   const { data, error } = await resend.emails.send({
-<<<<<<< HEAD
 
     from: "Gronxity <nikhilkota@gronxtiy.com>",
 
-=======
-    from: "Gronxtiy <onboarding@resend.dev>",
->>>>>>> 26abf30 (Update app features and switch email to Resend)
     to: [email],
     subject: "Your Gronxtiy Verification OTP",
 
@@ -1056,6 +1033,37 @@ res.cookie("userToken", token, {
 
 
 
+// ================= LOGOUT =================
+
+app.post("/logout", (req, res) => {
+  res.clearCookie("userToken", {
+    httpOnly: true,
+    secure: true,
+    sameSite: "none",
+    path: "/",
+  });
+
+  res.json({
+    message: "Logged out successfully",
+  });
+});
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 // ================= FORGOT PASSWORD =================
 
 app.post("/forgotpassword", async (req, res) => {
@@ -1256,31 +1264,11 @@ app.post("/resetpassword/:id/:token", async (req, res) => {
 
 
 
-// ================= LOGOUT =================
-
-app.post("/logout", (req, res) => {
-  res.clearCookie("userToken", {
-    httpOnly: true,
-    secure: true,
-    sameSite: "none",
-    path: "/",
-  });
-
-  res.json({
-    message: "Logged out successfully",
-  });
-});
 
 
 
 
 
-const studentOnly = (req, res, next) => {
-  if (!req.user || req.user.role !== "student") {
-    return res.status(403).json({ message: "Only students allowed" });
-  }
-  next();
-};
 
 
 
@@ -2800,13 +2788,8 @@ app.get(
 
 // ================= RECRUITER SETTINGS =================
 
-// recruiter only middleware
-const recruiterOnly = (req, res, next) => {
-  if (!req.user || req.user.role !== "recruiter") {
-    return res.status(403).json({ message: "Only recruiters allowed" });
-  }
-  next();
-};
+
+
 
 // GET recruiter settings/profile
 app.get("/api/recruiter/settings", authMiddleware, recruiterOnly, async (req, res) => {
@@ -8306,6 +8289,7 @@ app.put("/api/admin/support-requests/:id/status", authMiddleware, adminOnly, asy
 });
 
 
+
 const UserReportSchema = new mongoose.Schema(
   {
     reportedBy: {
@@ -8321,11 +8305,33 @@ const UserReportSchema = new mongoose.Schema(
       type: String,
       default: "",
     },
+
+    // ID of the reported user or post author
     profileId: {
       type: String,
       required: true,
       trim: true,
     },
+
+    // Whether this report is about a user or a post
+    reportType: {
+      type: String,
+      enum: ["user", "post"],
+      default: "user",
+    },
+
+    // Used only when reporting a post
+    reportedPostId: {
+      type: String,
+      default: "",
+      trim: true,
+    },
+    reportedPostContent: {
+      type: String,
+      default: "",
+      trim: true,
+    },
+
     description: {
       type: String,
       required: true,
@@ -8344,37 +8350,93 @@ const UserReport = mongoose.model("UserReport", UserReportSchema);
 
 
 
-app.post("/api/student/report-user", authMiddleware, studentOnly, async (req, res) => {
-  try {
-    const { profileId, description } = req.body;
+app.post(
+  "/api/student/report-user",
+  authMiddleware,
+  studentOnly,
+  async (req, res) => {
+    try {
+      const {
+        profileId,
+        reportedUserId,
+        reportedPostId,
+        reportedPostContent,
+        reportType,
+        description,
+      } = req.body;
 
-    if (!profileId || !description) {
-      return res.status(400).json({ message: "Profile ID and description are required" });
+      // Support both the existing user-report form and post-report form.
+      const targetUserId = profileId || reportedUserId || "";
+
+      const finalReportType =
+        reportType || (reportedPostId ? "post" : "user");
+
+      if (!["user", "post"].includes(finalReportType)) {
+        return res.status(400).json({
+          message: "Invalid report type",
+        });
+      }
+
+      if (!targetUserId || !description?.trim()) {
+        return res.status(400).json({
+          message: "Reported user ID and description are required",
+        });
+      }
+
+      if (finalReportType === "post" && !reportedPostId) {
+        return res.status(400).json({
+          message: "Post ID is required to report a post",
+        });
+      }
+
+      const student = await UserModel.findById(req.user.id);
+
+      if (!student) {
+        return res.status(404).json({
+          message: "Student not found",
+        });
+      }
+
+      const report = await UserReport.create({
+        reportedBy: student._id,
+        reporterName: student.name || "",
+        reporterEmail: student.email || "",
+        profileId: String(targetUserId).trim(),
+        reportType: finalReportType,
+        reportedPostId:
+          finalReportType === "post" ? String(reportedPostId).trim() : "",
+        reportedPostContent:
+          finalReportType === "post"
+            ? String(reportedPostContent || "").trim()
+            : "",
+        description: description.trim(),
+      });
+
+      return res.status(201).json({
+        message:
+          finalReportType === "post"
+            ? "Post report submitted successfully"
+            : "User report submitted successfully",
+        report,
+      });
+    } catch (err) {
+      console.error("Submit report error:", err);
+
+      return res.status(500).json({
+        message: err.message || "Server error",
+      });
     }
-
-    const student = await UserModel.findById(req.user.id);
-
-    if (!student) {
-      return res.status(404).json({ message: "Student not found" });
-    }
-
-    const report = await UserReport.create({
-      reportedBy: student._id,
-      reporterName: student.name || "",
-      reporterEmail: student.email || "",
-      profileId,
-      description,
-    });
-
-    res.status(201).json({
-      message: "User report submitted successfully",
-      report,
-    });
-  } catch (err) {
-    console.error("Report user error:", err);
-    res.status(500).json({ message: err.message || "Server error" });
   }
-});
+);
+
+
+
+
+
+
+
+
+
 
 app.get("/api/admin/user-reports", authMiddleware, adminOnly, async (req, res) => {
   try {
@@ -8811,6 +8873,112 @@ function getOtherMember(conversation, userId) {
 }
 
 // ================= CHAT ROUTES =================
+
+
+
+
+
+
+const chatMediaUpload = multer({
+  storage: multer.memoryStorage(),
+  limits: {
+    fileSize: 25 * 1024 * 1024, // 25 MB
+    files: 1,
+  },
+  fileFilter: (req, file, cb) => {
+    const allowedTypes = [
+      "image/jpeg",
+      "image/png",
+      "image/webp",
+      "image/gif",
+      "video/mp4",
+      "video/webm",
+      "video/quicktime",
+    ];
+
+    if (!allowedTypes.includes(file.mimetype)) {
+      return cb(new Error("Unsupported image or video format"));
+    }
+
+    cb(null, true);
+  },
+});
+
+
+
+
+
+
+app.post(
+  "/api/chat/upload-media",
+  authMiddleware,
+  studentOnly,
+  (req, res, next) => {
+    chatMediaUpload.single("file")(req, res, (err) => {
+      if (err) {
+        return res.status(400).json({
+          message:
+            err.code === "LIMIT_FILE_SIZE"
+              ? "Media must be smaller than 25 MB."
+              : err.message || "Invalid media file.",
+        });
+      }
+
+      next();
+    });
+  },
+  async (req, res) => {
+    try {
+      if (!req.file) {
+        return res.status(400).json({
+          message: "Please select an image or video.",
+        });
+      }
+
+      const isImage = req.file.mimetype.startsWith("image/");
+      const isVideo = req.file.mimetype.startsWith("video/");
+
+      if (!isImage && !isVideo) {
+        return res.status(400).json({
+          message: "Only images and videos are supported.",
+        });
+      }
+
+      const resourceType = isVideo ? "video" : "image";
+
+      const result = await new Promise((resolve, reject) => {
+        const stream = cloudinary.uploader.upload_stream(
+          {
+            folder: "gronxity/chat-media",
+            resource_type: resourceType,
+          },
+          (error, uploadedFile) => {
+            if (error) return reject(error);
+            resolve(uploadedFile);
+          }
+        );
+
+        stream.end(req.file.buffer);
+      });
+
+      return res.status(200).json({
+        message: "Media uploaded successfully",
+        url: result.secure_url,
+        secure_url: result.secure_url,
+        resourceType,
+      });
+    } catch (err) {
+      console.error("Chat media upload error:", err);
+
+      return res.status(500).json({
+        message: "Could not upload media. Please try again.",
+      });
+    }
+  }
+);
+
+
+
 
 // get all my conversations
 app.get("/api/chat/conversations", authMiddleware, studentOnly, async (req, res) => {
