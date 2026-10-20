@@ -54,6 +54,16 @@ export default function StudentConversations() {
   const [recording, setRecording] = useState(false);
   const [audioPreview, setAudioPreview] = useState("");
 
+
+  const [selectedMedia, setSelectedMedia] = useState(null);
+const [mediaPreview, setMediaPreview] = useState("");
+const [uploadingMedia, setUploadingMedia] = useState(false);
+
+
+const mediaInputRef = useRef(null);
+
+
+
   const [reportReason, setReportReason] = useState("");
   const [reportDescription, setReportDescription] = useState("");
   const [showReportModal, setShowReportModal] = useState(false);
@@ -411,27 +421,46 @@ export default function StudentConversations() {
     }
   };
 
-  const sendMessage = async (payload) => {
-    try {
-      if (!selectedConversation?._id) return;
 
-      await axios.post(
-        `${API_BASE}/api/chat/${selectedConversation._id}/message`,
-        payload,
-        { withCredentials: true },
-      );
 
-      setText("");
-      setImageUrl("");
-      setVideoUrl("");
-      setAudioPreview("");
-      setShowStickerPicker(false);
-      setShowMediaModal(false);
-    } catch (err) {
-      console.error("sendMessage error", err);
-      alert(err?.response?.data?.message || "Failed to send message");
-    }
-  };
+
+
+ 
+const sendMessage = async (payload) => {
+  try {
+    if (!selectedConversation?._id) return false;
+
+    await axios.post(
+      `${API_BASE}/api/chat/${selectedConversation._id}/message`,
+      payload,
+      { withCredentials: true }
+    );
+
+    setText("");
+    setImageUrl("");
+    setVideoUrl("");
+    setAudioPreview("");
+    setShowStickerPicker(false);
+    setShowMediaModal(false);
+
+    return true;
+  } catch (err) {
+    console.error("sendMessage error", err);
+    alert(err?.response?.data?.message || "Failed to send message");
+    return false;
+  }
+};
+
+
+
+
+
+
+
+
+
+
+
 
   const handleSendText = async () => {
     const clean = text.trim();
@@ -1098,6 +1127,115 @@ export default function StudentConversations() {
     }
   };
 
+
+
+
+
+
+  
+
+
+
+const handleMediaSelect = (e) => {
+  const file = e.target.files?.[0];
+  if (!file) return;
+
+  const allowedTypes = ["image/jpeg", "image/png", "image/webp",
+    "image/gif", "video/mp4", "video/webm", "video/quicktime"];
+
+  if (!allowedTypes.includes(file.type)) {
+    alert("Please select a supported image or video.");
+    e.target.value = "";
+    return;
+  }
+
+  // Example limit: 25 MB
+  if (file.size > 25 * 1024 * 1024) {
+    alert("Media must be smaller than 25 MB.");
+    e.target.value = "";
+    return;
+  }
+
+  setMediaPreview((previousPreview) => {
+  if (previousPreview) {
+    URL.revokeObjectURL(previousPreview);
+  }
+
+  return URL.createObjectURL(file);
+});
+
+setSelectedMedia(file);
+setShowMediaModal(true);
+
+
+};
+
+
+
+const handleSendSelectedMedia = async () => {
+  if (!selectedMedia || !selectedConversation?._id) return;
+
+  setUploadingMedia(true);
+
+  try {
+    const formData = new FormData();
+    formData.append("file", selectedMedia);
+
+    // This upload endpoint must exist in your backend.
+    const uploadRes = await axios.post(
+      `${API_BASE}/api/chat/upload-media`,
+      formData,
+      { withCredentials: true }
+    );
+
+    const mediaUrl =
+      uploadRes.data.url || uploadRes.data.secure_url;
+
+    if (!mediaUrl) {
+      throw new Error("The server did not return a media URL.");
+    }
+
+   
+const isVideo = selectedMedia.type.startsWith("video/");
+
+const sent = await sendMessage(
+  isVideo
+    ? { video: mediaUrl, messageType: "video" }
+    : { image: mediaUrl, messageType: "image" }
+);
+
+if (!sent) return;
+
+if (mediaPreview) {
+  URL.revokeObjectURL(mediaPreview);
+}
+
+setSelectedMedia(null);
+setMediaPreview("");
+setShowMediaModal(false);
+
+if (mediaInputRef.current) {
+  mediaInputRef.current.value = "";
+}
+
+
+
+  } catch (err) {
+    console.error("Media upload error:", err);
+    alert(
+      err?.response?.data?.message ||
+      err.message ||
+      "Failed to upload media."
+    );
+  } finally {
+    setUploadingMedia(false);
+  }
+};
+
+
+
+
+
   return (
     <div
       className={`student-chat-layout ${
@@ -1300,12 +1438,20 @@ export default function StudentConversations() {
                 </button>
 
                 <button
-                  className="icon-btn"
-                  onClick={() => setShowMediaModal(true)}
-                  title="Media URL"
-                >
-                  <ImageIcon size={20} />
-                </button>
+  className="icon-btn"
+  onClick={() => mediaInputRef.current?.click()}
+  title="Choose photo or video"
+>
+  <ImageIcon size={20} />
+</button>
+
+<input
+  ref={mediaInputRef}
+  type="file"
+  accept="image/*,video/*"
+  hidden
+  onChange={handleMediaSelect}
+/>
 
                 <button
                   className={`icon-btn ${recording ? "recording" : ""}`}
@@ -1390,49 +1536,75 @@ export default function StudentConversations() {
         </div>
       )}
 
-      {showMediaModal && (
-        <div className="chat-modal-overlay">
-          <div className="chat-modal">
-            <div className="chat-modal-head">
-              <h3>Send Media URL</h3>
-              <button
-                className="icon-btn"
-                onClick={() => setShowMediaModal(false)}
-              >
-                <X size={18} />
-              </button>
-            </div>
 
-            <input
-              type="text"
-              placeholder="Paste image URL"
-              value={imageUrl}
-              onChange={(e) => {
-                setImageUrl(e.target.value);
-                if (e.target.value.trim()) setVideoUrl("");
-              }}
-            />
 
-            <button className="chat-modal-btn" onClick={handleSendImage}>
-              Send Image
-            </button>
 
-            <input
-              type="text"
-              placeholder="Paste video URL"
-              value={videoUrl}
-              onChange={(e) => {
-                setVideoUrl(e.target.value);
-                if (e.target.value.trim()) setImageUrl("");
-              }}
-            />
 
-            <button className="chat-modal-btn" onClick={handleSendVideo}>
-              Send Video
-            </button>
-          </div>
-        </div>
+
+
+
+      {showMediaModal && selectedMedia && (
+  <div className="chat-modal-overlay">
+    <div className="chat-modal">
+      <div className="chat-modal-head">
+        <h3>Send Media</h3>
+
+        <button
+          className="icon-btn"
+          onClick={() => {
+            setShowMediaModal(false);
+            setSelectedMedia(null);
+
+            if (mediaPreview) {
+              URL.revokeObjectURL(mediaPreview);
+            }
+
+            setMediaPreview("");
+
+            if (mediaInputRef.current) {
+              mediaInputRef.current.value = "";
+            }
+          }}
+        >
+          <X size={18} />
+        </button>
+      </div>
+
+      {selectedMedia.type.startsWith("image/") ? (
+        <img
+          src={mediaPreview}
+          alt="Selected media preview"
+          className="chat-media"
+        />
+      ) : (
+        <video
+          src={mediaPreview}
+          controls
+          className="chat-media"
+        />
       )}
+
+      <p>{selectedMedia.name}</p>
+
+      <button
+        className="chat-modal-btn"
+        onClick={handleSendSelectedMedia}
+        disabled={uploadingMedia}
+      >
+        {uploadingMedia ? "Uploading..." : "Send"}
+      </button>
+    </div>
+  </div>
+)}
+
+
+
+
+
+
+
+
+
 
       {showReportModal && (
         <div className="chat-modal-overlay">
