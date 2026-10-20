@@ -20,6 +20,7 @@ import NotificationPreferences from "./NotificationPreferences";
 import HelpSupport from "./HelpSupport";
 import ReportUser from "./ReportUser";
 import StudentSaved from "./StudentSaved";
+import Logout from "./Logout";
 
 export default function StudentSettings() {
   const navigate = useNavigate();
@@ -65,23 +66,15 @@ const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
     };
   }, []);
 
-  const handleLogout = async () => {
-    const confirmLogout = window.confirm("Are you sure you want to logout?");
-    if (!confirmLogout) return;
 
-    try {
-      await axios.post(
-        `${import.meta.env.VITE_API_URL}/logout`,
-        {},
-        { withCredentials: true },
-      );
-    } catch (err) {
-      console.error("Logout error:", err.response?.data || err.message);
-    } finally {
-      localStorage.removeItem("user");
-      navigate("/login");
-    }
-  };
+
+
+  
+
+
+
+
+
 
   function SidebarItem({ icon, text, active, onClick }) {
     return (
@@ -113,18 +106,7 @@ const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
       case "Help & Support":
         return <HelpSupport />;
       case "Logout":
-        return (
-          <div className="settings-page-box">
-            <h2>Logout</h2>
-            <p className="settings-page-desc">
-              Click the button below to logout from your account.
-            </p>
-
-            <button className="logout-main-btn" onClick={handleLogout}>
-              Logout
-            </button>
-          </div>
-        );
+        return <Logout />;
       default:
         return <PrivacySettings />;
     }
