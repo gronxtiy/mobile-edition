@@ -12,8 +12,11 @@ export default function ReportUser() {
   const state = location.state || {};
 
   const reportedUserId = state.reportedUserId || state.profileId || "";
+  const reportedPostId = state.reportedPostId || "";
+  const reportedPostContent = state.reportedPostContent || "";
   const conversationId = state.conversationId || "";
   const reportedUserName = state.reportedUserName || "User";
+  const isPostReport = Boolean(reportedPostId);
 
   const [reason, setReason] = useState("Spam");
   const [description, setDescription] = useState("");
@@ -28,7 +31,7 @@ export default function ReportUser() {
       "Inappropriate content",
       "Other",
     ],
-    []
+    [],
   );
 
   const handleSubmit = async (e) => {
@@ -49,14 +52,17 @@ export default function ReportUser() {
 
       await axios.post(
         `${API_BASE}/api/student/report-user`,
-        {
-          reportedUserId,
-          profileId: reportedUserId,
-          conversationId,
-          reason,
-          description: `${reason}: ${description.trim()}`,
-        },
-        { withCredentials: true }
+       {
+  reportedUserId,
+  profileId: reportedUserId,
+  reportType: reportedPostId ? "post" : "user",
+  reportedPostId: reportedPostId || undefined,
+  reportedPostContent: reportedPostContent || undefined,
+  conversationId,
+  reason,
+  description: `${reason}: ${description.trim()}`,
+},
+        { withCredentials: true },
       );
 
       alert("User reported successfully");
@@ -72,10 +78,23 @@ export default function ReportUser() {
   return (
     <div className="report-user-page">
       <div className="report-user-card">
-        <h2>Report User</h2>
+        <h2>{isPostReport ? "Report Post" : "Report User"}</h2>
+
         <p>
-          You are reporting: <strong>{reportedUserName}</strong>
-        </p>
+  You are reporting a{" "}
+  <strong>{isPostReport ? "Post" : "User"}</strong>
+  {isPostReport && (
+    <>
+      {" "}by <strong>{reportedUserName}</strong>
+    </>
+  )}
+</p>
+        {isPostReport && reportedPostContent && (
+          <div className="reported-post-preview">
+            <strong>Reported post</strong>
+            <p>{reportedPostContent}</p>
+          </div>
+        )}
 
         <form onSubmit={handleSubmit} className="report-user-form">
           <label>Reason</label>
