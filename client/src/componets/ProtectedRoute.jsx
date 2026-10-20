@@ -1,5 +1,5 @@
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Navigate } from "react-router-dom";
 import axios from "axios";
 
@@ -7,60 +7,135 @@ const ProtectedRoute = ({ children, allowedRole }) => {
   const [loading, setLoading] = useState(true);
   const [authorized, setAuthorized] = useState(false);
 
-  useEffect(() => {
-    console.log("🔵 ProtectedRoute running");
-    console.log("🔵 API URL:", import.meta.env.VITE_API_URL);
-    console.log("🔵 Allowed role:", allowedRole);
-
-    // Get JWT token from localStorage
+  const checkAuth = useCallback(async () => {
     const token = localStorage.getItem("token");
 
-    console.log(
-      "🔵 Token:",
-      token ? "Token found ✅" : "No token ❌"
-    );
-
+    // No token means no dashboard access
     if (!token) {
+      localStorage.removeItem("user");
+      localStorage.removeItem("role");
       setAuthorized(false);
       setLoading(false);
       return;
     }
 
-    axios.get(
-      `${import.meta.env.VITE_API_URL}/api/${allowedRole}/dashboard`,
-      {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
+    setLoading(true);
+
+    try {
+      const res = await axios.get(
+        `${import.meta.env.VITE_API_URL}/api/${allowedRole}/dashboard`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+          withCredentials: true,
+          cache: "no-store",
+        }
+      );
+
+      // Ensure the same token is still present after the request
+      if (localStorage.getItem("token") !== token) {
+        setAuthorized(false);
+        return;
       }
-    )
-    .then((res) => {
-      console.log("✅ Dashboard auth success:", res.data);
+
+      console.log("Dashboard auth success:", res.data);
       setAuthorized(true);
-    })
-    .catch((err) => {
-      console.log(
-        "❌ Auth error:",
+    } catch (err) {
+      console.error(
+        "Authentication error:",
         err.response?.data || err.message
       );
 
-      // Remove invalid token
-      if (err.response?.status === 401) {
-        localStorage.removeItem("token");
-      }
+      localStorage.removeItem("token");
+      localStorage.removeItem("user");
+      localStorage.removeItem("role");
 
       setAuthorized(false);
-    })
-    .finally(() => {
+    } finally {
       setLoading(false);
-    });
+    }
+  }, [allowedRole]);
+
+  useEffect(() => {
+    let active = true;
+    let requestId = 0;
+
+    const verify = async () => {
+      const currentRequest = ++requestId;
+      const token = localStorage.getItem("token");
+
+      if (!token) {
+        if (active && currentRequest === requestId) {
+          setAuthorized(false);
+          setLoading(false);
+        }
+        return;
+      }
+
+      setLoading(true);
+
+      try {
+        await axios.get(
+          `${import.meta.env.VITE_API_URL}/api/${allowedRole}/dashboard`,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+            withCredentials: true,
+            cache: "no-store",
+          }
+        );
+
+        if (
+          active &&
+          currentRequest === requestId &&
+          localStorage.getItem("token") === token
+        ) {
+          setAuthorized(true);
+        }
+      } catch (err) {
+        if (active && currentRequest === requestId) {
+          localStorage.removeItem("token");
+          localStorage.removeItem("user");
+          localStorage.removeItem("role");
+          setAuthorized(false);
+        }
+      } finally {
+        if (active && currentRequest === requestId) {
+          setLoading(false);
+        }
+      }
+    };
+
+    verify();
+
+    const handlePageShow = () => {
+      verify();
+    };
+
+    const handleStorage = (event) => {
+      if (event.key === "token" && !event.newValue) {
+        setAuthorized(false);
+        setLoading(false);
+      }
+    };
+
+    window.addEventListener("pageshow", handlePageShow);
+    window.addEventListener("storage", handleStorage);
+
+    return () => {
+      active = false;
+      window.removeEventListener("pageshow", handlePageShow);
+      window.removeEventListener("storage", handleStorage);
+    };
   }, [allowedRole]);
 
   if (loading) {
-    return <p>Loading...</p>;
+    return <p>Checking authentication...</p>;
   }
 
-  if (!authorized) {
+  if (!authorized || !localStorage.getItem("token")) {
     return <Navigate to="/login" replace />;
   }
 
