@@ -70,16 +70,131 @@ import DummyStatusBar from './componets/DummyStatusBar';
 
 
 
+import { useEffect, useRef, useState } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
+import { App as CapacitorApp } from "@capacitor/app";
+import { Capacitor } from "@capacitor/core";
+
+
+
+
+
+
+
+
+function AndroidBackHandler() {
+  const location = useLocation();
+  const navigate = useNavigate();
+  const lastBackPress = useRef(0);
+  const [showExitMessage, setShowExitMessage] = useState(false);
+
+  useEffect(() => {
+    if (!Capacitor.isNativePlatform()) return;
+
+    let listener;
+
+    const setupListener = async () => {
+      listener = await CapacitorApp.addListener(
+        "backButton",
+        ({ canGoBack }) => {
+          const path = location.pathname;
+
+          // Main pages of the app
+          const isHomePage = [
+            "/student/student",
+            "/student/homepage",
+            "/recruiter/dashboard",
+          ].includes(path);
+
+          if (!isHomePage) {
+            // Go to the previous screen whenever possible
+            if (canGoBack && window.history.state?.idx > 0) {
+              navigate(-1);
+            } else {
+              // Safe fallback when there is no previous screen
+              const user = JSON.parse(
+                localStorage.getItem("user") || "{}"
+              );
+
+              if (user.role === "recruiter") {
+                navigate("/recruiter/dashboard", {
+                  replace: true,
+                });
+              } else if (user.role === "student") {
+                navigate("/student/student", {
+                  replace: true,
+                });
+              } else {
+                navigate("/login", { replace: true });
+              }
+            }
+
+            return;
+          }
+
+          // On Home, require a second Back press to exit
+          const now = Date.now();
+
+          if (now - lastBackPress.current < 2000) {
+            CapacitorApp.exitApp();
+          } else {
+            lastBackPress.current = now;
+            setShowExitMessage(true);
+
+            setTimeout(() => {
+              setShowExitMessage(false);
+            }, 2000);
+          }
+        }
+      );
+    };
+
+    setupListener();
+
+    return () => {
+      listener?.remove();
+    };
+  }, [location.pathname, navigate]);
+
+  if (!showExitMessage) return null;
+
+  return (
+    <div
+      style={{
+        position: "fixed",
+        bottom: "35px",
+        left: "50%",
+        transform: "translateX(-50%)",
+        background: "#222",
+        color: "#fff",
+        padding: "12px 20px",
+        borderRadius: "25px",
+        zIndex: 99999,
+        whiteSpace: "nowrap",
+        fontSize: "14px",
+      }}
+    >
+      Press back again to exit Gronxity
+    </div>
+  );
+}
 
 
 
 function App() {
   return (
     <BrowserRouter>
+     <AndroidBackHandler />
       <Routes>
         <Route path="/" element={<Navigate to="/login" />} />
         <Route path="/register" element={<Register />} />
-        <Route path="/login" element={<Login />} />
+
+
+               
+<Route
+  path="/login"
+  element={<Login />}
+/>
         <Route path="/forgotpassword" element={<ForgotPassword />} />
         <Route path="/resetpassword/:id/:token" element={<ResetPassword />} />
         <Route path="/jobscreen" element={<JobScreen />} />
