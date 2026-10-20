@@ -1,3 +1,4 @@
+
 import React from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
@@ -14,17 +15,22 @@ const Logout = () => {
         { withCredentials: true }
       );
 
-      console.log(res.data);
+      console.log("Logout successful:", res.data);
     } catch (err) {
-      console.error("Logout error:", err.response?.data || err.message);
+      console.error(
+        "Logout API error:",
+        err.response?.data || err.message
+      );
     } finally {
+      // Clear frontend authentication data
+      localStorage.removeItem("token");
       localStorage.removeItem("user");
 
-      // Reset sidebar to Home for next login
+      // Reset student navigation state
       sessionStorage.removeItem("studentActiveTab");
-      // or sessionStorage.setItem("studentActiveTab", "Home");
 
-      navigate("/login");
+      // Replace history entry instead of adding another one
+      navigate("/login", { replace: true });
     }
   };
 
