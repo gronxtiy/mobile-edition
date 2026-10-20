@@ -590,3 +590,48 @@ body,
   }
 
 }
+
+
+
+
+/* Sidebar item default styles */
+.sidebar-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  cursor: pointer;
+  color: #777777;
+  transition: color 0.2s ease;
+}
+
+/* Make Lucide icons inherit the sidebar text color */
+.sidebar-item svg {
+  color: inherit;
+  stroke: currentColor;
+  flex-shrink: 0;
+}
+
+/* Active tab: icon and text */
+.sidebar-item.active {
+  color: #0095f6 !important;
+  font-weight: 600;
+}
+
+/* Force the active icon to use the active color */
+.sidebar-item.active svg {
+  color: #0095f6 !important;
+  stroke: #0095f6 !important;
+}
+
+/* Mobile and Android */
+@media (max-width: 768px) {
+  .sidebar-item.active {
+    color: #0095f6 !important;
+  }
+
+  .sidebar-item.active svg {
+    color: #0095f6 !important;
+    stroke: #0095f6 !important;
+  }
+}
+
