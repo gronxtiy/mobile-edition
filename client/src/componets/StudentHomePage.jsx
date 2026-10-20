@@ -56,6 +56,8 @@ export default function StudentHomePage({
   const [selectedTags, setSelectedTags] = useState([]);
   const [showNavbar, setShowNavbar] = useState(true);
 
+  const [openPostMenu, setOpenPostMenu] = useState(null);
+
   const navigate = useNavigate();
 
 
@@ -1405,14 +1407,89 @@ useEffect(() => {
 
                       </div>
 
-                      <button
-                        type="button"
-                        className="iconOnlyBtn"
-                      >
-                        <MoreHorizontal
-                          size={18}
-                        />
-                      </button>
+                      
+                      
+                      
+                      
+                      
+                      
+<div className="postMenuWrapper">
+  <button
+    type="button"
+    className="iconOnlyBtn postMenuTrigger"
+    aria-label="Post options"
+    aria-haspopup="menu"
+    aria-expanded={openPostMenu === post._id}
+    onClick={(e) => {
+      e.stopPropagation();
+      setOpenPostMenu((previous) =>
+        previous === post._id ? null : post._id
+      );
+    }}
+  >
+    <MoreHorizontal size={20} />
+  </button>
+
+  {openPostMenu === post._id && (
+    <div
+      className="postDropdownMenu"
+      role="menu"
+      onClick={(e) => e.stopPropagation()}
+    >
+      <button
+        type="button"
+        className="postReportOption"
+        role="menuitem"
+        onClick={() => {
+          setOpenPostMenu(null);
+
+          const authorId =
+            post.authorId?._id ||
+            post.authorId ||
+            post.author?._id ||
+            post.user?._id ||
+            post.userId ||
+            "";
+
+          const authorName =
+            post.authorName ||
+            post.author?.name ||
+            post.user?.name ||
+            "User";
+
+          if (!authorId) {
+            alert("Could not identify the post author.");
+            return;
+          }
+
+          navigate("/student/report-user", {
+            state: {
+              reportedUserId: authorId,
+              reportedUserName: authorName,
+              reportedPostId: post._id,
+              reportedPostContent:
+                post.content || post.caption || "",
+            },
+          });
+        }}
+      >
+        Report Post
+      </button>
+    </div>
+  )}
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
 
                     </div>
 
