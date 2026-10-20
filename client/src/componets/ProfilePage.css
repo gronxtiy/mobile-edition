@@ -4980,6 +4980,58 @@ now bulid mobile edition like instagram here below two part to bulid post conten
 
 
 
+/* Share dropdown positioning */
+.dropdown-parent {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+
+/* Dropdown container */
+.dropdown-parent > * {
+  box-sizing: border-box;
+}
+
+.dropdown-parent .dropdown-menu {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  left: auto;
+  width: max-content;
+  min-width: 170px;
+  max-width: calc(100vw - 24px);
+  z-index: 1000;
+  overflow: hidden;
+}
+
+/* Dropdown items */
+.dropdown-parent .dropdown-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  min-height: 42px;
+  padding: 10px 14px;
+  box-sizing: border-box;
+  white-space: nowrap;
+  font-size: 14px;
+}
+
+/* Mobile layout */
+@media (max-width: 768px) {
+  .dropdown-parent .dropdown-menu {
+    min-width: 155px;
+    max-width: calc(100vw - 24px);
+    right: 0;
+    left: auto;
+  }
+
+  .dropdown-parent .dropdown-item {
+    min-height: 40px;
+    padding: 9px 12px;
+    font-size: 13px;
+  }
+}
 
 
 
@@ -4997,5 +5049,35 @@ now bulid mobile edition like instagram here below two part to bulid post conten
 
 
 
+
+
+@media screen and (max-width: 768px) {
+  .dropdown-parent .desktop-share-text {
+    display: inline;
+    font-size: 10px;
+    line-height: 1.2;
+  }
+
+  .dropdown-parent .mobile-share-item {
+    justify-content: flex-start;
+    gap: 5px;
+    padding: 6px;
+    height: auto;
+    min-height: 30px;
+    width: 100%;
+  }
+
+  .dropdown-parent .mobile-share-item svg {
+    width: 14px;
+    height: 14px;
+    flex-shrink: 0;
+  }
+
+  .dropdown-parent .custom-dropdown {
+    width: 125px;
+    min-width: 125px;
+    padding: 4px;
+  }
+}
 
 
