@@ -369,6 +369,7 @@ function StudentJobs() {
     <div className="jobs-container">
       <div className="filter-box">
        <div className="search-box">
+        
   <Search className="search-icon" size={20} />
 
   <input
