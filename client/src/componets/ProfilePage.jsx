@@ -30,6 +30,10 @@ import { useNavigate, useParams } from "react-router-dom";
 import ATSResumeDownload from "./ATSResumeDownload";
 import "./ProfilePage.css";
 
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faCopy } from "@fortawesome/free-solid-svg-icons";
+import { faWhatsapp } from "@fortawesome/free-brands-svg-icons";
+
 const API_BASE = import.meta.env.VITE_API_URL;
 
 const openToOptions = [
@@ -322,16 +326,12 @@ export default function ProfilePage({ onSettingsClick }) {
   const [experience, setExperience] = useState([]);
   const [education, setEducation] = useState([]);
   const [reelsContent, setReelsContent] = useState([]);
-
-
   const [postsContent, setPostsContent] = useState([]);
   const [achievements, setAchievements] = useState([]);
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [sendingRequest, setSendingRequest] = useState(false);
-
-
 
   const [editSection, setEditSection] = useState("");
 
@@ -1011,7 +1011,6 @@ const handleDeleteContent = async (content) => {
       setReelsContent((prev) =>
         prev.filter((item) => String(item.id) !== String(content.id))
       );
-      
     } else {
       setPostsContent((prev) =>
         prev.filter((item) => String(item.id) !== String(content.id))
@@ -1120,24 +1119,38 @@ const handleDeleteContent = async (content) => {
                   <span>Share</span>
                 </button>
 
+
+
+
+
                 <Dropdown open={shareOpen}>
-                  <button
-                    type="button"
-                    className="dropdown-item"
-                    onClick={handleCopyLink}
-                  >
-                    <Copy size={16} />
-                    <span>Copy Link</span>
-                  </button>
-                  <button
-                    type="button"
-                    className="dropdown-item"
-                    onClick={handleWhatsAppShare}
-                  >
-                    <MessageCircle size={16} />
-                    <span>WhatsApp Share</span>
-                  </button>
-                </Dropdown>
+  <button
+    type="button"
+    className="dropdown-item mobile-share-item"
+    onClick={handleCopyLink}
+    title="Copy Link"
+    aria-label="Copy Link"
+  >
+    <FontAwesomeIcon icon={faCopy} />
+    <span className="desktop-share-text">Copy Link</span>
+  </button>
+
+  <button
+    type="button"
+    className="dropdown-item mobile-share-item"
+    onClick={handleWhatsAppShare}
+    title="WhatsApp Share"
+    aria-label="WhatsApp Share"
+  >
+    <FontAwesomeIcon icon={faWhatsapp} />
+    <span className="desktop-share-text">WhatsApp </span>
+  </button>
+</Dropdown>
+
+
+
+
+
               </div>
 
 
@@ -1252,6 +1265,7 @@ const handleDeleteContent = async (content) => {
                     <strong>{profile.followers}</strong>
                     <span>Followers</span>
                   </div>
+
                   <div className="profile-stat-inline">
                     <strong>{completionScore}%</strong>
                     <span>Profile Strength</span>
@@ -2802,27 +2816,44 @@ return (
                   <span>Share</span>
                 </button>
 
-                <Dropdown open={shareOpen}>
-                  <button
-                    type="button"
-                    className="dropdown-item"
-                    onClick={handleCopyLink}
-                  >
-                    <Copy size={16} />
-                    <span>Copy Link</span>
-                  </button>
 
-                  <button
-                    type="button"
-                    className="dropdown-item"
-                    onClick={handleWhatsAppShare}
-                  >
-                    <MessageCircle size={16} />
-                    <span>WhatsApp Share</span>
-                  </button>
-                </Dropdown>
+
+
+
+               <Dropdown open={shareOpen}>
+  <button
+    type="button"
+    className="dropdown-item mobile-share-item"
+    onClick={handleCopyLink}
+    title="Copy Link"
+    aria-label="Copy Link"
+  >
+    <FontAwesomeIcon icon={faCopy} />
+    <span className="desktop-share-text">Copy Link</span>
+  </button>
+
+  <button
+    type="button"
+    className="dropdown-item mobile-share-item"
+    onClick={handleWhatsAppShare}
+    title="WhatsApp Share"
+    aria-label="WhatsApp Share"
+  >
+    <FontAwesomeIcon icon={faWhatsapp} />
+    <span className="desktop-share-text">WhatsApp </span>
+  </button>
+</Dropdown>
 
               </div>
+
+
+
+
+
+
+
+
+
                 {/* 3. SETTINGS */}
 {isOwnProfile && (
   <button
