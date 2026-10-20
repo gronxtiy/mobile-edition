@@ -42,11 +42,86 @@ export default function StudentVideosPage() {
   const [shareUsers, setShareUsers] = useState([]);
 
   const [mobileReelSearch, setMobileReelSearch] = useState("");
+  const [authorProfiles, setAuthorProfiles] = useState({});
 
+  const getReelAuthorId = (reel) => {
+    const candidates = [
+      reel.authorId,
+      reel.userId,
+      reel.user,
+      reel.author,
+      reel.studentId,
+    ];
 
+    for (const candidate of candidates) {
+      const id =
+        candidate && typeof candidate === "object"
+          ? candidate._id || candidate.id
+          : candidate;
 
+      if (typeof id === "string" && /^[a-f\d]{24}$/i.test(id)) {
+        return id;
+      }
+    }
 
+    return null;
+  };
 
+  useEffect(() => {
+    if (!reels.length) return;
+
+    let cancelled = false;
+
+    const loadAuthorProfiles = async () => {
+      const ids = [...new Set(reels.map(getReelAuthorId).filter(Boolean))];
+
+      const results = await Promise.all(
+        ids.map(async (id) => {
+          try {
+            const res = await fetch(`${API_BASE}/api/student/profile/${id}`, {
+              credentials: "include",
+              headers: {
+                Authorization: `Bearer ${localStorage.getItem("token") || ""}`,
+              },
+            });
+
+            if (!res.ok) {
+              console.error("Could not load student profile:", id, res.status);
+              return null;
+            }
+
+            const data = await res.json();
+
+            return {
+              id,
+              profile: data.profile || data,
+            };
+          } catch (error) {
+            console.error("Profile fetch error:", id, error);
+            return null;
+          }
+        }),
+      );
+
+      if (cancelled) return;
+
+      setAuthorProfiles((prev) => {
+        const updated = { ...prev };
+
+        results.forEach((item) => {
+          if (item) updated[item.id] = item.profile;
+        });
+
+        return updated;
+      });
+    };
+
+    loadAuthorProfiles();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [reels]);
 
   useEffect(() => {
     if (!shareReel) return;
@@ -54,8 +129,8 @@ export default function StudentVideosPage() {
     fetch(`${API_BASE}/api/student/share/users`, {
       credentials: "include",
       headers: {
-    Authorization: `Bearer ${localStorage.getItem("token")}`,
-  },
+        Authorization: `Bearer ${localStorage.getItem("token")}`,
+      },
     })
       .then(async (res) => {
         if (!res.ok) throw new Error("Failed to load users");
@@ -76,9 +151,9 @@ export default function StudentVideosPage() {
 
       const res = await fetch(`${API_BASE}/api/student/reels`, {
         credentials: "include",
-         headers: {
-    Authorization: `Bearer ${localStorage.getItem("token")}`,
-  },
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+        },
       });
 
       const rawText = await res.text();
@@ -160,9 +235,9 @@ export default function StudentVideosPage() {
       const res = await fetch(`${API_BASE}/api/student/posts/${reelId}/like`, {
         method: "PUT",
         credentials: "include",
-         headers: {
-    Authorization: `Bearer ${localStorage.getItem("token")}`,
-  },
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+        },
       });
 
       const rawText = await res.text();
@@ -200,9 +275,9 @@ export default function StudentVideosPage() {
       const res = await fetch(`${API_BASE}/api/student/posts/${reelId}/save`, {
         method: "PUT",
         credentials: "include",
-         headers: {
-    Authorization: `Bearer ${localStorage.getItem("token")}`,
-  },
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+        },
       });
 
       const rawText = await res.text();
@@ -245,8 +320,8 @@ export default function StudentVideosPage() {
         credentials: "include",
 
         headers: {
-    Authorization: `Bearer ${localStorage.getItem("token")}`,
-  },
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+        },
       });
 
       const rawText = await res.text();
@@ -290,7 +365,7 @@ export default function StudentVideosPage() {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
-             Authorization: `Bearer ${localStorage.getItem("token")}`,
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
           },
           credentials: "include",
           body: JSON.stringify({ text: newComment.trim() }),
@@ -342,9 +417,9 @@ export default function StudentVideosPage() {
         {
           method: "PUT",
           credentials: "include",
-           headers: {
-    Authorization: `Bearer ${localStorage.getItem("token")}`,
-  },
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
         },
       );
 
@@ -402,7 +477,7 @@ export default function StudentVideosPage() {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
-             Authorization: `Bearer ${localStorage.getItem("token")}`,
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
           },
           credentials: "include",
           body: JSON.stringify({ text }),
@@ -476,7 +551,7 @@ export default function StudentVideosPage() {
         credentials: "include",
         headers: {
           "Content-Type": "application/json",
-           Authorization: `Bearer ${localStorage.getItem("token")}`,
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
         },
         body: JSON.stringify({
           receiverId: user._id,
@@ -531,9 +606,9 @@ export default function StudentVideosPage() {
       const res = await fetch(`${API_BASE}/api/student/request/${receiverId}`, {
         method: "POST",
         credentials: "include",
-         headers: {
-    Authorization: `Bearer ${localStorage.getItem("token")}`,
-  },
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+        },
       });
 
       const data = await res.json();
@@ -550,556 +625,454 @@ export default function StudentVideosPage() {
     }
   };
 
-
-
-
   const openReel = (index) => {
-  setSelectedReelIndex(index);
-  setMenuOpenId(null);
-};
+    setSelectedReelIndex(index);
+    setMenuOpenId(null);
+  };
 
-const closeReel = () => {
-  setSelectedReelIndex(null);
-};
-
-
-
-
-
-
-
-
-
-
+  const closeReel = () => {
+    setSelectedReelIndex(null);
+  };
 
   return (
-  <div className="reels-page-wrapper">
+    <div className="reels-page-wrapper">
+      {/* MOBILE REELS SEARCH */}
+      {selectedReelIndex === null && (
+        <div
+          className="mobile-reel-search"
+          onClick={() => navigate("/student/search")}
+        >
+          <Search size={18} />
+          <span>Search</span>
+        </div>
+      )}
 
-    {/* MOBILE REELS SEARCH */}
-{selectedReelIndex === null && (
-    <div
-      className="mobile-reel-search"
-      onClick={() => navigate("/student/search")}
-    >
-      <Search size={18} />
-      <span>Search</span>
-    </div>
-  )}
-
-
-    {/* =====================================================
+      {/* =====================================================
         REELS GRID - INITIAL SCREEN
     ===================================================== */}
-    {selectedReelIndex === null && (
-      <div className="reels-grid-page">
+      {selectedReelIndex === null && (
+        <div className="reels-grid-page">
+          {reels.map((reel, index) => (
+            <button
+              type="button"
+              className="reel-grid-item"
+              key={reel._id}
+              onClick={() => openReel(index)}
+            >
+              {reel.videoUrl ? (
+                <video
+                  src={reel.videoUrl}
+                  className="reel-grid-media"
+                  muted
+                  playsInline
+                  preload="metadata"
+                />
+              ) : reel.imageUrl ? (
+                <img
+                  src={reel.imageUrl}
+                  alt={reel.author || "Reel"}
+                  className="reel-grid-media"
+                />
+              ) : (
+                <div className="reel-grid-no-media">No media</div>
+              )}
 
-        {reels.map((reel, index) => (
-          <button
-            type="button"
-            className="reel-grid-item"
-            key={reel._id}
-            onClick={() => openReel(index)}
-          >
-            {reel.videoUrl ? (
-              <video
-                src={reel.videoUrl}
-                className="reel-grid-media"
-                muted
-                playsInline
-                preload="metadata"
-              />
-            ) : reel.imageUrl ? (
-              <img
-                src={reel.imageUrl}
-                alt={reel.author || "Reel"}
-                className="reel-grid-media"
-              />
-            ) : (
-              <div className="reel-grid-no-media">
-                No media
+              {/* Reel icon */}
+              <div className="reel-grid-icon">
+                <span>▶</span>
               </div>
-            )}
+            </button>
+          ))}
+        </div>
+      )}
 
-            {/* Reel icon */}
-            <div className="reel-grid-icon">
-              <span>▶</span>
-            </div>
-          </button>
-        ))}
-
-      </div>
-    )}
-
-    {/* =====================================================
+      {/* =====================================================
         FULL SCREEN REEL - AFTER CLICK
     ===================================================== */}
-    {selectedReelIndex !== null && (
-      <div className="reel-viewer-page">
+      {selectedReelIndex !== null && (
+        <div className="reel-viewer-page">
+          {/* Back button */}
+          <button
+            type="button"
+            className="reel-viewer-close"
+            onClick={closeReel}
+          >
+            <X size={24} />
+          </button>
 
-        {/* Back button */}
-        <button
-          type="button"
-          className="reel-viewer-close"
-          onClick={closeReel}
-        >
-          <X size={24} />
-        </button>
-
-        <div className="reels-feed-page">
-
-          {reels.map((reel, index) => (
-            <section
-              className="reel-stage"
-              key={reel._id}
-              
-            >
-
-              <div className="reel-phone-frame">
-
-                <div className="reel-video-wrapper">
-
-                  {reel.videoUrl ? (
-                    <video
-                      ref={(el) => {
-                        if (el) {
-                          videoRefs.current[reel._id] = el;
-                        }
-                      }}
-                      data-id={reel._id}
-                      className="reel-full-video"
-                      playsInline
-                      loop
-                      muted={mutedMap[reel._id] ?? true}
-                      autoPlay={index === selectedReelIndex}
-                      onClick={() => togglePlayPause(reel._id)}
-                    >
-                      <source
-                        src={reel.videoUrl}
-                        type="video/mp4"
-                      />
-                    </video>
-                  ) : reel.imageUrl ? (
-                    <img
-                      src={reel.imageUrl}
-                      alt="reel"
-                      className="reel-full-video"
-                    />
-                  ) : (
-                    <div className="reel-no-media">
-                      No media
-                    </div>
-                  )}
-
-                  {/* TOP BAR */}
-                  <div className="reel-top-bar">
-
+          <div className="reels-feed-page">
+            {reels.map((reel, index) => (
+              <section className="reel-stage" key={reel._id}>
+                <div className="reel-phone-frame">
+                  <div className="reel-video-wrapper">
                     {reel.videoUrl ? (
-                      <button
-                        type="button"
-                        className="sound-toggle-btn"
-                        onClick={() =>
-                          toggleMute(reel._id)
-                        }
+                      <video
+                        ref={(el) => {
+                          if (el) {
+                            videoRefs.current[reel._id] = el;
+                          }
+                        }}
+                        data-id={reel._id}
+                        className="reel-full-video"
+                        playsInline
+                        loop
+                        muted={mutedMap[reel._id] ?? true}
+                        autoPlay={index === selectedReelIndex}
+                        onClick={() => togglePlayPause(reel._id)}
                       >
-                        {(mutedMap[reel._id] ?? true) ? (
-                          <VolumeX size={17} />
-                        ) : (
-                          <Volume2 size={17} />
-                        )}
-                      </button>
+                        <source src={reel.videoUrl} type="video/mp4" />
+                      </video>
+                    ) : reel.imageUrl ? (
+                      <img
+                        src={reel.imageUrl}
+                        alt="reel"
+                        className="reel-full-video"
+                      />
                     ) : (
-                      <div />
+                      <div className="reel-no-media">No media</div>
                     )}
 
-                    <button
-                      type="button"
-                      className="reel-top-icon"
-                      onClick={() =>
-                        setMenuOpenId(
-                          menuOpenId === reel._id
-                            ? null
-                            : reel._id
-                        )
-                      }
-                    >
-                      <MoreHorizontal size={20} />
-                    </button>
-
-                    {menuOpenId === reel._id && (
-                      <div className="reel-top-dropdown">
-
+                    {/* TOP BAR */}
+                    <div className="reel-top-bar">
+                      {reel.videoUrl ? (
                         <button
                           type="button"
-                          onClick={() =>
-                            deleteReel(reel._id)
-                          }
+                          className="sound-toggle-btn"
+                          onClick={() => toggleMute(reel._id)}
                         >
-                          <Trash2 size={16} />
-                          Delete
+                          {(mutedMap[reel._id] ?? true) ? (
+                            <VolumeX size={17} />
+                          ) : (
+                            <Volume2 size={17} />
+                          )}
                         </button>
-
-                      </div>
-                    )}
-
-                  </div>
-
-                  {/* RIGHT ACTIONS */}
-                  <div className="reel-right-actions">
-
-                    <button
-                      className={`reel-side-action ${
-                        reel.isLiked ? "active" : ""
-                      }`}
-                      onClick={() =>
-                        toggleLike(reel._id)
-                      }
-                    >
-                      <Heart
-                        fill={
-                          reel.isLiked
-                            ? "#ff3040"
-                            : "none"
-                        }
-                        size={30}
-                      />
-
-                      <span>
-                        {formatCount(
-                          reel.likes?.length ||
-                            reel.likesCount ||
-                            0
-                        )}
-                      </span>
-                    </button>
-
-                    <button
-                      className="reel-side-action"
-                      onClick={() =>
-                        openComments(reel)
-                      }
-                    >
-                      <MessageCircle size={30} />
-
-                      <span>
-                        {formatCount(
-                          reel.commentsCount || 0
-                        )}
-                      </span>
-                    </button>
-
-                    <button
-                      className="reel-side-action"
-                      onClick={() =>
-                        setShareReel(reel)
-                      }
-                    >
-                      <Send size={28} />
-                    </button>
-
-                    <button
-                      className={`reel-side-action ${
-                        reel.isSaved ? "saved" : ""
-                      }`}
-                      onClick={() =>
-                        toggleSave(reel._id)
-                      }
-                    >
-                      <Bookmark size={28} />
-                    </button>
-
-                    <button
-                      className="reel-side-action"
-                      onClick={() =>
-                        setMenuOpenId(
-                          menuOpenId === reel._id
-                            ? null
-                            : reel._id
-                        )
-                      }
-                    >
-                      <MoreHorizontal size={28} />
-                    </button>
-
-                  </div>
-
-                  {/* BOTTOM USER INFO */}
-                  <div className="reel-bottom-overlay">
-
-                    <div className="reel-bottom-top-row">
-
-                      <div
-                        className="reel-profile-click"
-                        onClick={() =>
-                          navigate(
-                            `/student/profile/${reel.authorId}`
-                          )
-                        }
-                      >
-
-                        <img
-                          src={
-                            reel.profileImage ||
-                            "https://i.pravatar.cc/150?img=8"
-                          }
-                          alt={
-                            reel.author || "Student"
-                          }
-                          className="reel-user-avatar"
-                        />
-
-                        <div className="reel-middle-meta">
-
-                          <h4>
-                            {reel.author ||
-                              "Student"}
-                          </h4>
-
-                          <div className="reel-tag-row">
-
-                            <span className="reel-tag-text">
-                              <p>
-                                {reel.content}
-                              </p>
-                            </span>
-
-                          </div>
-
-                        </div>
-
-                      </div>
+                      ) : (
+                        <div />
+                      )}
 
                       <button
                         type="button"
-                        className="reel-follow-btn"
+                        className="reel-top-icon"
                         onClick={() =>
-                          sendFollowRequest(
-                            reel.authorId
+                          setMenuOpenId(
+                            menuOpenId === reel._id ? null : reel._id,
                           )
                         }
                       >
-                        Follow
+                        <MoreHorizontal size={20} />
                       </button>
 
+                      {menuOpenId === reel._id && (
+                        <div className="reel-top-dropdown">
+                          <button
+                            type="button"
+                            onClick={() => deleteReel(reel._id)}
+                          >
+                            <Trash2 size={16} />
+                            Delete
+                          </button>
+                        </div>
+                      )}
                     </div>
 
-                  </div>
+                    {/* RIGHT ACTIONS */}
+                    <div className="reel-right-actions">
+                      <button
+                        className={`reel-side-action ${
+                          reel.isLiked ? "active" : ""
+                        }`}
+                        onClick={() => toggleLike(reel._id)}
+                      >
+                        <Heart
+                          fill={reel.isLiked ? "#ff3040" : "none"}
+                          size={30}
+                        />
 
-                </div>
+                        <span>
+                          {formatCount(
+                            reel.likes?.length || reel.likesCount || 0,
+                          )}
+                        </span>
+                      </button>
 
-              </div>
+                      <button
+                        className="reel-side-action"
+                        onClick={() => openComments(reel)}
+                      >
+                        <MessageCircle size={30} />
 
-            </section>
-          ))}
+                        <span>{formatCount(reel.commentsCount || 0)}</span>
+                      </button>
 
+                      <button
+                        className="reel-side-action"
+                        onClick={() => setShareReel(reel)}
+                      >
+                        <Send size={28} />
+                      </button>
+
+                      <button
+                        className={`reel-side-action ${
+                          reel.isSaved ? "saved" : ""
+                        }`}
+                        onClick={() => toggleSave(reel._id)}
+                      >
+                        <Bookmark size={28} />
+                      </button>
+
+                      <button
+                        className="reel-side-action"
+                        onClick={() =>
+                          setMenuOpenId(
+                            menuOpenId === reel._id ? null : reel._id,
+                          )
+                        }
+                      >
+                        <MoreHorizontal size={28} />
+                      </button>
+                    </div>
+
+                    {/* BOTTOM USER INFO */}
+                  {/* BOTTOM USER INFO */}
+<div className="reel-bottom-overlay">
+  {(() => {
+    const authorId = getReelAuthorId(reel);
+    const profile = authorId
+      ? authorProfiles[authorId]
+      : null;
+
+    const name =
+      profile?.name ||
+      reel.authorName ||
+      (typeof reel.author === "string" ? reel.author : "") ||
+      reel.author?.name ||
+      reel.user?.name ||
+      reel.authorId?.name ||
+      "Student";
+
+    const avatar =
+      profile?.avatar ||
+      reel.profileImage ||
+      reel.avatar ||
+      reel.author?.avatar ||
+      reel.user?.avatar ||
+      "";
+
+    return (
+      <div className="reel-bottom-top-row">
+        <div
+          className="reel-profile-click"
+          onClick={() => {
+            if (!authorId) {
+              console.error("Missing author ID:", reel);
+              alert("Student profile ID is missing.");
+              return;
+            }
+
+            navigate(`/student/profile/${authorId}`);
+          }}
+        >
+          {avatar ? (
+            <img
+              src={avatar}
+              alt={name}
+              className="reel-user-avatar"
+              onError={(e) => {
+                e.currentTarget.onerror = null;
+                e.currentTarget.style.display = "none";
+              }}
+            />
+          ) : (
+            <div className="reel-user-avatar">
+              {name.charAt(0).toUpperCase()}
+            </div>
+          )}
+
+          <div className="reel-middle-meta">
+            <h4>{name}</h4>
+            <div className="reel-tag-row">
+              <span className="reel-tag-text">
+                <p>{reel.content || ""}</p>
+              </span>
+            </div>
+          </div>
         </div>
 
-        {/* =================================================
+        <button
+          type="button"
+          className="reel-follow-btn"
+          disabled={!authorId}
+          onClick={() => sendFollowRequest(authorId)}
+        >
+          Follow
+        </button>
+      </div>
+    );
+  })()}
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                  </div>
+                </div>
+              </section>
+            ))}
+          </div>
+
+          {/* =================================================
             COMMENTS
         ================================================= */}
 
-        {commentReel && (
-          <div
-            className="commentPopup"
-            onClick={() =>
-              setCommentReel(null)
-            }
-          >
+          {commentReel && (
+            <div className="commentPopup" onClick={() => setCommentReel(null)}>
+              <div className="commentBox" onClick={(e) => e.stopPropagation()}>
+                <div className="commentHeader">
+                  <h3>Comments</h3>
 
-            <div
-              className="commentBox"
-              onClick={(e) =>
-                e.stopPropagation()
-              }
-            >
+                  <button
+                    type="button"
+                    className="iconOnlyBtn"
+                    onClick={() => setCommentReel(null)}
+                  >
+                    <X size={20} />
+                  </button>
+                </div>
 
-              <div className="commentHeader">
+                <div className="commentCountText">
+                  {currentComments.length} comments
+                </div>
 
-                <h3>Comments</h3>
+                <div className="commentInputBox">
+                  <input
+                    type="text"
+                    placeholder="Write a comment..."
+                    value={newComment}
+                    onChange={(e) => setNewComment(e.target.value)}
+                    onKeyDown={(e) => e.key === "Enter" && addComment()}
+                  />
 
-                <button
-                  type="button"
-                  className="iconOnlyBtn"
-                  onClick={() =>
-                    setCommentReel(null)
-                  }
-                >
-                  <X size={20} />
-                </button>
+                  <button type="button" onClick={addComment}>
+                    <Send size={18} />
+                  </button>
+                </div>
 
-              </div>
-
-              <div className="commentCountText">
-                {currentComments.length} comments
-              </div>
-
-              <div className="commentInputBox">
-
-                <input
-                  type="text"
-                  placeholder="Write a comment..."
-                  value={newComment}
-                  onChange={(e) =>
-                    setNewComment(e.target.value)
-                  }
-                  onKeyDown={(e) =>
-                    e.key === "Enter" &&
-                    addComment()
-                  }
-                />
-
-                <button
-                  type="button"
-                  onClick={addComment}
-                >
-                  <Send size={18} />
-                </button>
-
-              </div>
-
-              <div className="commentList">
-
-                {currentComments.length === 0 ? (
-                  <div className="noComments">
-                    No comments yet.
-                  </div>
-                ) : (
-                  currentComments.map((comment) => (
-                    <div
-                      className="commentCard"
-                      key={comment._id}
-                    >
-
-                      <div className="commentTop">
-
-                        <img
-                          src={
-                            comment.profileImage ||
-                            "https://i.pravatar.cc/150?img=10"
-                          }
-                          alt="comment user"
-                          className="commentAvatar"
-                        />
-
-                        <div className="commentContentBox">
-
-                          <div className="commentMeta">
-
-                            <div>
-
-                              <h4>
-                                {comment.name ||
-                                  comment.userName ||
-                                  "User"}
-                              </h4>
-
-                              <span>
-                                {comment.createdAt
-                                  ? new Date(
-                                      comment.createdAt
-                                    ).toLocaleString()
-                                  : "Now"}
-                              </span>
-
-                            </div>
-
-                            <button
-                              type="button"
-                              className="commentLikeBtn"
-                              onClick={() =>
-                                toggleCommentLike(
-                                  commentReel._id,
-                                  comment._id
-                                )
-                              }
-                            >
-                              <Heart size={16} />
-
-                              <span>
-                                {comment.likes?.length ||
-                                  0}
-                              </span>
-
-                            </button>
-
-                          </div>
-
-                          <p>{comment.text}</p>
-
-                          <button
-                            type="button"
-                            className="replyToggleBtn"
-                            onClick={() =>
-                              toggleReplyInput(
-                                comment._id
-                              )
+                <div className="commentList">
+                  {currentComments.length === 0 ? (
+                    <div className="noComments">No comments yet.</div>
+                  ) : (
+                    currentComments.map((comment) => (
+                      <div className="commentCard" key={comment._id}>
+                        <div className="commentTop">
+                          <img
+                            src={
+                              comment.profileImage ||
+                              "https://i.pravatar.cc/150?img=10"
                             }
-                          >
-                            Reply
-                          </button>
+                            alt="comment user"
+                            className="commentAvatar"
+                          />
 
-                          {replyInputs[
-                            comment._id
-                          ] && (
-                            <div className="replyInputBox">
+                          <div className="commentContentBox">
+                            <div className="commentMeta">
+                              <div>
+                                <h4>
+                                  {comment.name || comment.userName || "User"}
+                                </h4>
 
-                              <input
-                                type="text"
-                                placeholder="Write a reply..."
-                                value={
-                                  replyText[
-                                    comment._id
-                                  ] || ""
-                                }
-                                onChange={(e) =>
-                                  setReplyText(
-                                    (prev) => ({
-                                      ...prev,
-                                      [comment._id]:
-                                        e.target.value,
-                                    })
-                                  )
-                                }
-                                onKeyDown={(e) =>
-                                  e.key === "Enter" &&
-                                  addReply(
-                                    commentReel._id,
-                                    comment._id
-                                  )
-                                }
-                              />
+                                <span>
+                                  {comment.createdAt
+                                    ? new Date(
+                                        comment.createdAt,
+                                      ).toLocaleString()
+                                    : "Now"}
+                                </span>
+                              </div>
 
                               <button
                                 type="button"
+                                className="commentLikeBtn"
                                 onClick={() =>
-                                  addReply(
+                                  toggleCommentLike(
                                     commentReel._id,
-                                    comment._id
+                                    comment._id,
                                   )
                                 }
                               >
-                                <Send size={16} />
+                                <Heart size={16} />
+
+                                <span>{comment.likes?.length || 0}</span>
                               </button>
-
                             </div>
-                          )}
 
-                          {comment.replies?.length >
-                            0 && (
-                            <div className="replyList">
+                            <p>{comment.text}</p>
 
-                              {comment.replies.map(
-                                (
-                                  reply,
-                                  index
-                                ) => (
+                            <button
+                              type="button"
+                              className="replyToggleBtn"
+                              onClick={() => toggleReplyInput(comment._id)}
+                            >
+                              Reply
+                            </button>
+
+                            {replyInputs[comment._id] && (
+                              <div className="replyInputBox">
+                                <input
+                                  type="text"
+                                  placeholder="Write a reply..."
+                                  value={replyText[comment._id] || ""}
+                                  onChange={(e) =>
+                                    setReplyText((prev) => ({
+                                      ...prev,
+                                      [comment._id]: e.target.value,
+                                    }))
+                                  }
+                                  onKeyDown={(e) =>
+                                    e.key === "Enter" &&
+                                    addReply(commentReel._id, comment._id)
+                                  }
+                                />
+
+                                <button
+                                  type="button"
+                                  onClick={() =>
+                                    addReply(commentReel._id, comment._id)
+                                  }
+                                >
+                                  <Send size={16} />
+                                </button>
+                              </div>
+                            )}
+
+                            {comment.replies?.length > 0 && (
+                              <div className="replyList">
+                                {comment.replies.map((reply, index) => (
                                   <div
                                     className="replyCard"
-                                    key={
-                                      reply._id ||
-                                      index
-                                    }
+                                    key={reply._id || index}
                                   >
-
                                     <img
                                       src={
                                         reply.profileImage ||
@@ -1110,253 +1083,149 @@ const closeReel = () => {
                                     />
 
                                     <div className="replyBody">
+                                      <h5>{reply.name || "User"}</h5>
 
-                                      <h5>
-                                        {reply.name ||
-                                          "User"}
-                                      </h5>
-
-                                      <p>
-                                        {reply.text}
-                                      </p>
-
+                                      <p>{reply.text}</p>
                                     </div>
-
                                   </div>
-                                )
-                              )}
-
-                            </div>
-                          )}
-
+                                ))}
+                              </div>
+                            )}
+                          </div>
                         </div>
-
                       </div>
-
-                    </div>
-                  ))
-                )}
-
+                    ))
+                  )}
+                </div>
               </div>
-
             </div>
+          )}
 
-          </div>
-        )}
-
-        {/* =================================================
+          {/* =================================================
             SHARE POPUP
         ================================================= */}
 
-        {shareReel && (
-          <div
-            className="sharePopupOverlay"
-            onClick={() =>
-              setShareReel(null)
-            }
-          >
-
+          {shareReel && (
             <div
-              className="sharePopupBox"
-              onClick={(e) =>
-                e.stopPropagation()
-              }
+              className="sharePopupOverlay"
+              onClick={() => setShareReel(null)}
             >
+              <div
+                className="sharePopupBox"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <div className="sharePopupHeader">
+                  <button
+                    type="button"
+                    className="shareCloseBtn"
+                    onClick={() => setShareReel(null)}
+                  >
+                    <X size={28} />
+                  </button>
 
-              <div className="sharePopupHeader">
+                  <h3>Share</h3>
 
-                <button
-                  type="button"
-                  className="shareCloseBtn"
-                  onClick={() =>
-                    setShareReel(null)
-                  }
-                >
-                  <X size={28} />
-                </button>
+                  <div style={{ width: "28px" }} />
+                </div>
 
-                <h3>Share</h3>
+                <div className="shareSearchBox">
+                  <Search size={18} />
 
-                <div
-                  style={{ width: "28px" }}
-                />
+                  <input
+                    type="text"
+                    placeholder="Search"
+                    value={shareSearch}
+                    onChange={(e) => setShareSearch(e.target.value)}
+                  />
+                </div>
 
-              </div>
-
-              <div className="shareSearchBox">
-
-                <Search size={18} />
-
-                <input
-                  type="text"
-                  placeholder="Search"
-                  value={shareSearch}
-                  onChange={(e) =>
-                    setShareSearch(
-                      e.target.value
-                    )
-                  }
-                />
-
-              </div>
-
-              <div className="shareUsersGrid">
-
-                {filteredShareUsers.map(
-                  (user) => (
+                <div className="shareUsersGrid">
+                  {filteredShareUsers.map((user) => (
                     <button
                       key={user._id}
                       type="button"
                       className="shareUserCard"
-                      onClick={() =>
-                        handleShareToUser(
-                          user,
-                          shareReel
-                        )
-                      }
+                      onClick={() => handleShareToUser(user, shareReel)}
                     >
-
                       <img
-                        src={
-                          user.profileImage ||
-                          "https://i.pravatar.cc/150"
-                        }
+                        src={user.profileImage || "https://i.pravatar.cc/150"}
                         alt={user.name}
                       />
 
-                      <span>
-                        {user.name}
-                      </span>
-
+                      <span>{user.name}</span>
                     </button>
-                  )
-                )}
+                  ))}
+                </div>
 
+                <div className="shareBottomBar">
+                  <button
+                    type="button"
+                    className="shareBottomAction"
+                    onClick={() => handleCopyLink(shareReel)}
+                  >
+                    <div className="shareBottomIcon">🔗</div>
+                    <span>Copy link</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    className="shareBottomAction"
+                    onClick={() => handleExternalShare("facebook", shareReel)}
+                  >
+                    <div className="shareBottomIcon">f</div>
+                    <span>Facebook</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    className="shareBottomAction"
+                    onClick={() => handleExternalShare("messenger", shareReel)}
+                  >
+                    <div className="shareBottomIcon">💬</div>
+                    <span>Messenger</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    className="shareBottomAction"
+                    onClick={() => handleExternalShare("whatsapp", shareReel)}
+                  >
+                    <div className="shareBottomIcon">🟢</div>
+                    <span>WhatsApp</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    className="shareBottomAction"
+                    onClick={() => handleExternalShare("email", shareReel)}
+                  >
+                    <div className="shareBottomIcon">✉️</div>
+                    <span>Email</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    className="shareBottomAction"
+                    onClick={() => handleExternalShare("threads", shareReel)}
+                  >
+                    <div className="shareBottomIcon">@</div>
+                    <span>Threads</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    className="shareBottomAction"
+                    onClick={() => handleExternalShare("x", shareReel)}
+                  >
+                    <div className="shareBottomIcon">𝕏</div>
+                    <span>X</span>
+                  </button>
+                </div>
               </div>
-
-              <div className="shareBottomBar">
-
-                <button
-                  type="button"
-                  className="shareBottomAction"
-                  onClick={() =>
-                    handleCopyLink(shareReel)
-                  }
-                >
-                  <div className="shareBottomIcon">
-                    🔗
-                  </div>
-                  <span>Copy link</span>
-                </button>
-
-                <button
-                  type="button"
-                  className="shareBottomAction"
-                  onClick={() =>
-                    handleExternalShare(
-                      "facebook",
-                      shareReel
-                    )
-                  }
-                >
-                  <div className="shareBottomIcon">
-                    f
-                  </div>
-                  <span>Facebook</span>
-                </button>
-
-                <button
-                  type="button"
-                  className="shareBottomAction"
-                  onClick={() =>
-                    handleExternalShare(
-                      "messenger",
-                      shareReel
-                    )
-                  }
-                >
-                  <div className="shareBottomIcon">
-                    💬
-                  </div>
-                  <span>Messenger</span>
-                </button>
-
-                <button
-                  type="button"
-                  className="shareBottomAction"
-                  onClick={() =>
-                    handleExternalShare(
-                      "whatsapp",
-                      shareReel
-                    )
-                  }
-                >
-                  <div className="shareBottomIcon">
-                    🟢
-                  </div>
-                  <span>WhatsApp</span>
-                </button>
-
-                <button
-                  type="button"
-                  className="shareBottomAction"
-                  onClick={() =>
-                    handleExternalShare(
-                      "email",
-                      shareReel
-                    )
-                  }
-                >
-                  <div className="shareBottomIcon">
-                    ✉️
-                  </div>
-                  <span>Email</span>
-                </button>
-
-                <button
-                  type="button"
-                  className="shareBottomAction"
-                  onClick={() =>
-                    handleExternalShare(
-                      "threads",
-                      shareReel
-                    )
-                  }
-                >
-                  <div className="shareBottomIcon">
-                    @
-                  </div>
-                  <span>Threads</span>
-                </button>
-
-                <button
-                  type="button"
-                  className="shareBottomAction"
-                  onClick={() =>
-                    handleExternalShare(
-                      "x",
-                      shareReel
-                    )
-                  }
-                >
-                  <div className="shareBottomIcon">
-                    𝕏
-                  </div>
-                  <span>X</span>
-                </button>
-
-              </div>
-
             </div>
-
-          </div>
-        )}
-
-      </div>
-    )}
-
-  </div>
-);
-
+          )}
+        </div>
+      )}
+    </div>
+  );
 }
-
