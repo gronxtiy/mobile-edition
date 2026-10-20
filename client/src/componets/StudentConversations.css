@@ -2249,3 +2249,121 @@
     max-width: 84%;
   }
 }
+
+
+
+
+/* Images inside chat messages */
+.chat-message-image {
+  display: block;
+  max-width: 260px;
+  max-height: 320px;
+  width: auto;
+  height: auto;
+  object-fit: cover;
+  border-radius: 12px;
+  cursor: zoom-in;
+}
+
+/* Full-screen image viewer */
+.image-fullscreen-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 99999;
+  background: rgba(0, 0, 0, 0.96);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+}
+
+.image-fullscreen-content {
+  display: block;
+  max-width: 100%;
+  max-height: 100%;
+  width: auto;
+  height: auto;
+  object-fit: contain;
+  border-radius: 4px;
+}
+
+.image-fullscreen-close {
+  position: absolute;
+  top: 18px;
+  right: 20px;
+  z-index: 2;
+  width: 44px;
+  height: 44px;
+  border: none;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.15);
+  color: white;
+  font-size: 34px;
+  line-height: 1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.image-fullscreen-close:active {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+
+
+
+/* Media preview modal - mobile screen fix */
+.chat-media {
+  display: block;
+  width: 100%;
+  max-width: 100%;
+  max-height: 45vh;
+  height: auto;
+  object-fit: contain;
+  border-radius: 10px;
+  margin: 10px auto;
+}
+
+/* Keep the modal inside the screen */
+.chat-modal,
+.chat-media-modal {
+  box-sizing: border-box;
+  max-height: 90dvh;
+  overflow-y: auto;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Image and video preview */
+.chat-media img,
+.chat-media video {
+  max-width: 100%;
+}
+
+/* Mobile layout */
+@media (max-width: 768px) {
+  .chat-modal,
+  .chat-media-modal {
+    width: calc(100% - 24px);
+    max-width: 100%;
+    max-height: 85dvh;
+    margin: auto;
+    padding: 14px;
+    overflow-y: auto;
+    overflow-x: hidden;
+    box-sizing: border-box;
+  }
+
+  .chat-media {
+    max-height: 40vh;
+    width: 100%;
+    object-fit: contain;
+  }
+
+  .chat-modal-btn {
+    width: 100%;
+    min-height: 42px;
+    margin-top: 10px;
+  }
+}
