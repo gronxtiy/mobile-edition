@@ -1031,3 +1031,761 @@
     display: none !important;
   }
 }
+
+
+
+/* =========================================================
+   MOBILE ONLY — OTHER FILTER BELOW THE TABS
+   Desktop and tablet remain unchanged
+========================================================= */
+
+@media screen and (max-width: 768px) {
+  .navbar {
+    position: relative !important;
+    overflow: visible !important;
+  }
+
+  .filter-dropdown {
+    position: absolute !important;
+
+    /* Position immediately below the complete navbar */
+    top: 100% !important;
+    left: 0 !important;
+    right: 0 !important;
+
+    width: 100% !important;
+    max-width: none !important;
+
+    margin: 4px 0 0 !important;
+    padding: 16px !important;
+
+    background: #ffffff !important;
+    border: 1px solid #e5e7eb !important;
+    border-radius: 0 0 14px 14px !important;
+
+    box-shadow: 0 5px 20px rgba(0, 0, 0, 0.15) !important;
+
+    max-height: 60vh !important;
+    overflow-x: hidden !important;
+    overflow-y: auto !important;
+
+    z-index: 2000 !important;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .filter-dropdown h3 {
+    margin: 0 0 14px !important;
+    font-size: 16px !important;
+  }
+
+  .filter-grid {
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 12px !important;
+  }
+
+  .filter-grid label {
+    min-width: 0 !important;
+    font-size: 13px !important;
+  }
+
+  .apply-filter-btn {
+    width: 100% !important;
+    margin-top: 16px !important;
+  }
+}
+
+
+
+
+/* =========================================================
+   STUDENT NAVBAR
+   DESKTOP + TABLET + MOBILE
+========================================================= */
+
+* {
+  box-sizing: border-box;
+}
+
+/* =========================================================
+   MAIN NAVBAR
+========================================================= */
+
+.navbar {
+  position: sticky;
+  top: 0;
+  width: 100%;
+  min-height: 68px;
+
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0;
+
+  padding: 0 40px;
+
+  background: #ffffff;
+  border-bottom: 1px solid #e9ecef;
+  box-shadow: 0 2px 15px rgba(0, 0, 0, 0.05);
+
+  z-index: 1000;
+  flex-shrink: 0;
+}
+
+/* =========================================================
+   LOGO
+========================================================= */
+
+.logo-container {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+}
+
+.logo-name {
+  margin: 0;
+  font-size: 32px;
+  font-weight: 800;
+  color: #2563eb;
+  letter-spacing: 0.5px;
+  cursor: pointer;
+  user-select: none;
+  line-height: 1;
+}
+
+/* =========================================================
+   MOBILE ACTION BUTTONS
+========================================================= */
+
+.mobile-plus-btn,
+.mobile-heart-btn {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+}
+
+/* =========================================================
+   SEARCH
+========================================================= */
+
+.search-box {
+  flex: 1;
+  width: 100%;
+  max-width: 520px;
+  min-width: 0;
+  height: 46px;
+  margin: 0 45px;
+  padding: 0 18px;
+
+  display: flex;
+  align-items: center;
+
+  background: #f5f7fb;
+  border: 1px solid transparent;
+  border-radius: 50px;
+  transition: background 0.3s ease, border-color 0.3s ease;
+}
+
+.search-icon {
+  flex: 0 0 auto;
+  width: 20px;
+  height: 20px;
+  font-size: 20px;
+  color: #64748b;
+}
+
+.search-input {
+  flex: 1;
+  width: 100%;
+  min-width: 0;
+  height: 100%;
+  margin-left: 12px;
+  padding: 0;
+
+  border: none;
+  outline: none;
+  background: transparent;
+
+  font-size: 15px;
+  color: #111827;
+}
+
+.search-input::placeholder {
+  color: #94a3b8;
+}
+
+.search-input:focus,
+.search-input:focus-visible {
+  outline: none;
+  border: none;
+  box-shadow: none;
+}
+
+/* =========================================================
+   NAVIGATION TABS
+========================================================= */
+
+.nav-links {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+
+  width: auto;
+  overflow: visible;
+  position: static;
+  background: transparent;
+}
+
+.nav-links button {
+  height: 42px;
+  min-width: 0;
+  padding: 0 22px;
+
+  border: none;
+  border-radius: 25px;
+  background: #f5f7fb;
+  color: #374151;
+
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+
+  transition: background 0.25s ease, color 0.25s ease;
+}
+
+.nav-links button:hover {
+  background: #dbeafe;
+  color: #2563eb;
+}
+
+.nav-links button:active {
+  transform: scale(0.96);
+}
+
+.nav-links button.activeTab {
+  background: #2563eb;
+  color: #ffffff;
+}
+
+.nav-links button.activeTab:hover {
+  background: #2563eb;
+  color: #ffffff;
+}
+
+/* =========================================================
+   FILTER DROPDOWN - DESKTOP
+========================================================= */
+
+.nav-tabs-wrapper {
+  display: contents;
+}
+
+.filter-dropdown {
+  position: absolute;
+  top: 65px;
+  right: 40px;
+
+  width: 320px;
+  max-width: calc(100vw - 20px);
+  padding: 20px;
+
+  background: #ffffff;
+  border-radius: 12px;
+  box-shadow: 0 5px 20px rgba(0, 0, 0, 0.2);
+
+  z-index: 2000;
+  overflow-x: hidden;
+  overflow-y: auto;
+}
+
+.filter-dropdown h3 {
+  margin: 0 0 15px;
+  font-size: 18px;
+  font-weight: 700;
+  color: #111827;
+}
+
+.filter-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.filter-grid label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+
+  min-width: 0;
+  font-size: 14px;
+  color: #374151;
+  cursor: pointer;
+}
+
+.filter-grid input {
+  flex-shrink: 0;
+  cursor: pointer;
+  accent-color: #2563eb;
+}
+
+.filter-option span {
+  overflow-wrap: anywhere;
+}
+
+.apply-filter-btn {
+  width: 100%;
+  margin-top: 20px;
+  padding: 10px;
+
+  border: none;
+  border-radius: 8px;
+  background: #2563eb;
+  color: #ffffff;
+
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 600;
+  transition: background 0.2s ease;
+}
+
+.apply-filter-btn:hover {
+  background: #1d4ed8;
+}
+
+/* =========================================================
+   TABLET
+========================================================= */
+
+@media screen and (max-width: 1000px) and (min-width: 769px) {
+  .navbar {
+    padding: 0 20px;
+  }
+
+  .logo-name {
+    font-size: 28px;
+  }
+
+  .search-box {
+    max-width: 350px;
+    margin-left: 20px;
+    margin-right: 20px;
+  }
+
+  .nav-links {
+    gap: 8px;
+  }
+
+  .nav-links button {
+    padding: 0 15px;
+    font-size: 13px;
+  }
+}
+
+/* =========================================================
+   MOBILE ONLY
+========================================================= */
+
+@media screen and (max-width: 768px) {
+  .navbar {
+    position: relative !important;
+
+    width: 100% !important;
+    min-height: 0 !important;
+    height: auto !important;
+
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: stretch !important;
+    justify-content: flex-start !important;
+
+    gap: 10px !important;
+    padding: 10px 12px 8px !important;
+    margin: 0 !important;
+
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+
+    z-index: 1000 !important;
+    overflow: visible !important;
+    flex-shrink: 0 !important;
+  }
+
+  /* LOGO ROW */
+
+  .logo-container {
+    position: relative !important;
+    width: 100% !important;
+    height: 38px !important;
+    min-height: 38px !important;
+
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    flex: 0 0 auto !important;
+  }
+
+  .logo-name {
+    margin: 0 !important;
+    font-size: 25px !important;
+    line-height: 1 !important;
+    white-space: nowrap !important;
+  }
+
+  /* PLUS BUTTON */
+
+  .mobile-plus-btn {
+    position: absolute !important;
+    left: 0 !important;
+    top: 50% !important;
+    transform: translateY(-50%) !important;
+
+    width: 34px !important;
+    height: 34px !important;
+    padding: 0 !important;
+    margin: 0 !important;
+
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+
+    border: none !important;
+    background: transparent !important;
+    color: #000000 !important;
+    cursor: pointer !important;
+    z-index: 10 !important;
+  }
+
+  .mobile-plus-btn svg {
+    width: 25px;
+    height: 25px;
+  }
+
+  .mobile-plus-btn:active {
+    transform: translateY(-50%) scale(0.9) !important;
+  }
+
+  /* HEART BUTTON */
+
+  .mobile-heart-btn {
+    position: absolute !important;
+    right: 2px !important;
+    top: 50% !important;
+    transform: translateY(-50%) !important;
+
+    width: 34px !important;
+    height: 34px !important;
+    padding: 0 !important;
+
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+
+    border: none !important;
+    background: #ffffff !important;
+    color: #374151 !important;
+    border-radius: 50% !important;
+    cursor: pointer !important;
+  }
+
+  .mobile-heart-btn svg {
+    width: 19px !important;
+    height: 19px !important;
+    pointer-events: none !important;
+  }
+
+  /* SEARCH */
+
+  .search-box {
+    flex: 0 0 auto !important;
+    width: 100% !important;
+    max-width: none !important;
+    min-width: 0 !important;
+
+    height: 45px !important;
+    min-height: 45px !important;
+    margin: 0 !important;
+    padding: 0 16px !important;
+
+    display: flex !important;
+    align-items: center !important;
+
+    background: #f5f7fb !important;
+    border: 1px solid transparent !important;
+    border-radius: 14px !important;
+    box-shadow: none !important;
+  }
+
+  .search-box:hover {
+    background: #ffffff !important;
+    border-color: #2563eb !important;
+  }
+
+  .search-box:focus-within {
+    background: #ffffff !important;
+    border-color: #2563eb !important;
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1) !important;
+  }
+
+  .search-icon {
+    flex: 0 0 auto !important;
+    width: 21px !important;
+    height: 21px !important;
+    color: #64748b !important;
+  }
+
+  .search-input {
+    flex: 1 1 auto !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    height: 100% !important;
+    margin: 0 0 0 11px !important;
+    padding: 0 !important;
+
+    border: none !important;
+    outline: none !important;
+    background: transparent !important;
+
+    font-size: 16px !important;
+    color: #111827 !important;
+  }
+
+  /* TABS + FILTER POSITIONING PARENT */
+
+  .nav-tabs-wrapper {
+    position: relative !important;
+    display: block !important;
+
+    width: 100% !important;
+    min-width: 0 !important;
+    flex: 0 0 auto !important;
+
+    margin: 0 !important;
+    padding: 0 !important;
+
+    overflow: visible !important;
+  }
+
+  /* MOBILE TABS */
+
+  .nav-tabs-wrapper .nav-links {
+    position: relative !important;
+
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+
+    width: 100% !important;
+    height: auto !important;
+    min-height: 36px !important;
+
+    gap: 6px !important;
+    padding: 4px 0 8px !important;
+    margin: 0 !important;
+
+    background: #ffffff !important;
+    overflow: visible !important;
+    z-index: 1 !important;
+  }
+
+  .nav-tabs-wrapper .nav-links button {
+    flex: 1 1 0 !important;
+
+    width: 0 !important;
+    min-width: 0 !important;
+    max-width: none !important;
+
+    height: 36px !important;
+    min-height: 36px !important;
+    padding: 0 5px !important;
+    margin: 0 !important;
+
+    border: none !important;
+    border-radius: 20px !important;
+
+    background: #f5f7fb !important;
+    color: #374151 !important;
+
+    font-size: clamp(11px, 3.2vw, 14px) !important;
+    font-weight: 600 !important;
+    white-space: nowrap !important;
+
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+  }
+
+  .nav-tabs-wrapper .nav-links button:hover {
+    background: #dbeafe !important;
+    color: #2563eb !important;
+  }
+
+  .nav-tabs-wrapper .nav-links button.activeTab {
+    background: #2563eb !important;
+    color: #ffffff !important;
+  }
+
+  /* FILTER DIRECTLY BELOW THE TABS */
+
+  .nav-tabs-wrapper .filter-dropdown {
+    position: absolute !important;
+
+    top: calc(100% - 4px) !important;
+    left: 0 !important;
+    right: 0 !important;
+    bottom: auto !important;
+
+    width: 100% !important;
+    max-width: none !important;
+    max-height: 60vh !important;
+
+    margin: 0 !important;
+    padding: 16px !important;
+
+    display: block !important;
+    box-sizing: border-box !important;
+
+    background: #ffffff !important;
+    border: 1px solid #e5e7eb !important;
+    border-radius: 0 0 14px 14px !important;
+
+    box-shadow: 0 5px 20px rgba(0, 0, 0, 0.15) !important;
+
+    overflow-x: hidden !important;
+    overflow-y: auto !important;
+
+    z-index: 2000 !important;
+    -webkit-overflow-scrolling: touch !important;
+  }
+
+  .nav-tabs-wrapper .filter-dropdown h3 {
+    margin: 0 0 14px !important;
+    font-size: 16px !important;
+    font-weight: 700 !important;
+  }
+
+  .nav-tabs-wrapper .filter-grid {
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 12px !important;
+    width: 100% !important;
+  }
+
+  .nav-tabs-wrapper .filter-grid label {
+    display: flex !important;
+    align-items: center !important;
+    gap: 8px !important;
+
+    min-width: 0 !important;
+    font-size: 13px !important;
+    line-height: 1.3 !important;
+  }
+
+  .nav-tabs-wrapper .filter-grid input {
+    flex-shrink: 0 !important;
+    accent-color: #2563eb !important;
+  }
+
+  .nav-tabs-wrapper .apply-filter-btn {
+    display: block !important;
+    width: 100% !important;
+    margin-top: 16px !important;
+    padding: 11px !important;
+
+    border: none !important;
+    border-radius: 8px !important;
+    background: #2563eb !important;
+    color: #ffffff !important;
+
+    font-size: 14px !important;
+    font-weight: 600 !important;
+    cursor: pointer !important;
+  }
+}
+
+/* =========================================================
+   SMALL PHONES
+========================================================= */
+
+@media screen and (max-width: 360px) {
+  .navbar {
+    padding-left: 10px !important;
+    padding-right: 10px !important;
+  }
+
+  .logo-name {
+    font-size: 23px !important;
+  }
+
+  .mobile-heart-btn {
+    right: 0 !important;
+    width: 32px !important;
+    height: 32px !important;
+  }
+
+  .search-box {
+    height: 40px !important;
+    min-height: 40px !important;
+    padding-left: 14px !important;
+    padding-right: 14px !important;
+  }
+
+  .search-input {
+    margin-left: 9px !important;
+    font-size: 15px !important;
+  }
+
+  .search-icon {
+    width: 19px !important;
+    height: 19px !important;
+  }
+
+  .nav-tabs-wrapper .nav-links {
+    gap: 5px !important;
+    padding-top: 3px !important;
+    padding-bottom: 7px !important;
+  }
+
+  .nav-tabs-wrapper .nav-links button {
+    height: 34px !important;
+    min-height: 34px !important;
+    padding-left: 3px !important;
+    padding-right: 3px !important;
+    font-size: 11px !important;
+  }
+
+  .nav-tabs-wrapper .filter-dropdown {
+    padding: 14px !important;
+  }
+
+  .nav-tabs-wrapper .filter-grid {
+    gap: 10px !important;
+  }
+}
+
+/* =========================================================
+   ACCESSIBILITY
+========================================================= */
+
+.nav-links button:focus-visible,
+.mobile-plus-btn:focus-visible,
+.mobile-heart-btn:focus-visible,
+.apply-filter-btn:focus-visible {
+  outline: 2px solid #2563eb;
+  outline-offset: 2px;
+}
+
+/* DESKTOP: HIDE MOBILE PLUS BUTTON */
+
+@media screen and (min-width: 769px) {
+  .mobile-plus-btn {
+    display: none !important;
+  }
+}
